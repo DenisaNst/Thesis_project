@@ -36,6 +36,7 @@ This repository implements a multi-phase research project on drug discovery for 
 - **Scientific RAG**: Justifies predictions via automated PubMed literature retrieval.
 
 ## Usage
-1. Parse DrugBank: `python src\data\extract_drugbank_smiles.py`
-2. Fetch Sequences: `python src\data\fetch_protein_sequences.py`
-3. Fetch Interactions: `python src\data\fetch_chembl_interactions.py`
+1. Parse DrugBank: `python src\retrieve_data\extract_drugbank_smiles.py`
+2. Fetch interactions: `python src\retrieve_data\fetch_chembl_interactions.py`
+3. Fetch protein sequences: `python src\retrieve_data\fetch_protein_sequences.py`
+4. Run baseline pipeline (embeddings + RF model + feature importance): `python src\run_baseline.py`

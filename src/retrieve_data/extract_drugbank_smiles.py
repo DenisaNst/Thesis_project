@@ -2,6 +2,7 @@ import xml.etree.ElementTree as ET
 import pandas as pd
 import os
 from tqdm import tqdm
+from pathlib import Path
 
 def parse_drugbank(xml_path, output_path):
     print(f"Parsing {xml_path}...")
@@ -52,15 +53,13 @@ def parse_drugbank(xml_path, output_path):
     print(f"Saved {len(drugs)} approved drugs with SMILES to {output_path}")
 
 if __name__ == "__main__":
-    # Correct relative path for DrugBank XML
-    xml_file = os.path.join("drugbank_all_full_database.xml", "full database.xml")
-    output_file = os.path.join("data", "processed", "fda_approved_drugs.csv")
-    
-    if os.path.exists(xml_file):
-        parse_drugbank(xml_file, output_file)
+    project_root = Path(__file__).resolve().parents[2]
+    xml_file = project_root / "drugbank_all_full_database.xml" / "full database.xml"
+    output_file = project_root / "retrieve_data" / "processed" / "fda_approved_drugs.csv"
+
+    if xml_file.exists():
+        parse_drugbank(str(xml_file), str(output_file))
+    elif (project_root / "full database.xml").exists():
+        parse_drugbank(str(project_root / "full database.xml"), str(output_file))
     else:
-        # Check if it's in the project root directly (different structure)
-        if os.path.exists("full database.xml"):
-             parse_drugbank("full database.xml", output_file)
-        else:
-            print(f"File not found: {xml_file}")
+        print(f"File not found: {xml_file}")
