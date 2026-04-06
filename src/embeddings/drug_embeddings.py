@@ -1,166 +1,120 @@
 from pathlib import Path
-import argparse
 import numpy as np
 import pandas as pd
 from rdkit import Chem
-from rdkit.Chem import AllChem, DataStructs, rdFingerprintGenerator
 
+import torch
+import torch.nn.functional as F
+from transformers import AutoModel, AutoTokenizer
+
+MODEL_NAME = "seyonec/ChemBERTa-zinc-base-v1"
+
+from rdkit import Chem
 
 def canonicalize_smiles(smiles):
-    if not isinstance(smiles, str) or not smiles.strip():
+    if not isinstance(smiles, str):
         return None
-    mol = Chem.MolFromSmiles(smiles)
-    if mol is None:
+    smiles = smiles.strip()
+    if not smiles:
         return None
-    return Chem.MolToSmiles(mol, canonical=True)
-
-
-def fetch_smiles_from_chembl(molecule_ids):
-    try:
-        from chembl_webresource_client.new_client import new_client
-    except ImportError as exc:
-        raise ImportError(
-            "Install chembl_webresource_client to fetch SMILES from ChEMBL IDs."
-        ) from exc
-
-    rows = []
-    for mid in sorted(set(molecule_ids)):
+    mol = Chem.MolFromSmiles(smiles, sanitize=False)
+    if mol is not None:
         try:
-            rec = new_client.molecule.get(mid)
-            smiles = (rec.get("molecule_structures") or {}).get("canonical_smiles")
-            rows.append({"drug_id": mid, "smiles": smiles})
-        except Exception as exc:
-            print(f"[warn] Could not fetch SMILES for {mid}: {exc}")
-            rows.append({"drug_id": mid, "smiles": None})
-    return pd.DataFrame(rows)
+            Chem.SanitizeMol(mol)
+            return Chem.MolToSmiles(mol, canonical=True)
+        except Exception:
+            pass
+    return None
 
 
-def morgan_embeddings(smiles_list, n_bits=2048, radius=2):
-    # Prefer the newer generator API to avoid deprecation warnings.
-    generator = None
-    try:
-        generator = rdFingerprintGenerator.GetMorganGenerator(radius=radius, fpSize=n_bits)
-    except Exception:
-        generator = None
+def load_data(path):
+    df = pd.read_csv(path)
 
-    vectors = []
-    for smi in smiles_list:
-        mol = Chem.MolFromSmiles(smi)
-        if mol is None:
-            vectors.append(np.zeros(n_bits, dtype=np.float32))
-            continue
-        if generator is not None:
-            fp = generator.GetFingerprint(mol)
-        else:
-            fp = AllChem.GetMorganFingerprintAsBitVect(mol, radius, nBits=n_bits)
-        arr = np.zeros((n_bits,), dtype=np.float32)
-        DataStructs.ConvertToNumpyArray(fp, arr)
-        vectors.append(arr)
-    return np.vstack(vectors)
+    df = df.rename(columns={
+        "drugbank_id": "drug_id",
+        "name": "drug_name"
+    })
+
+    df = df[["drug_id", "drug_name", "smiles"]].copy()
+
+    original_n = len(df)
+
+    df["canonical_smiles"] = df["smiles"].apply(canonicalize_smiles)
+
+    valid_df = df[df["canonical_smiles"].notna()].copy()
+
+    valid_df["smiles"] = valid_df["canonical_smiles"]
+    valid_df = valid_df.drop(columns=["canonical_smiles"])
+    valid_df = valid_df.drop_duplicates(subset=["drug_id"]).reset_index(drop=True)
+
+    print(f"[info] Original drugs in CSV: {original_n}")
+    print(f"[info] Valid drugs remaining: {len(valid_df)}")
+
+    return valid_df
 
 
-def molformer_embeddings(smiles_list, model_name="ibm/MoLFormer-XL-both-10pct", batch_size=32, max_length=256):
-    try:
-        import torch
-        from transformers import AutoModel, AutoTokenizer
-    except ImportError as exc:
-        raise ImportError("MolFormer backend requires torch and transformers.") from exc
-
+def load_model():
     device = "cuda" if torch.cuda.is_available() else "cpu"
-    tokenizer = AutoTokenizer.from_pretrained(model_name, trust_remote_code=True)
-    model = AutoModel.from_pretrained(model_name, trust_remote_code=True).to(device)
+
+    tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
+    model = AutoModel.from_pretrained(MODEL_NAME).to(device)
     model.eval()
 
-    batches = []
+    return tokenizer, model, device
+
+
+def embed_smiles(smiles_list, tokenizer, model, device, batch_size=32):
+    all_embeddings = []
+
     with torch.no_grad():
         for i in range(0, len(smiles_list), batch_size):
-            batch = smiles_list[i : i + batch_size]
-            toks = tokenizer(
+            batch = smiles_list[i:i + batch_size]
+
+            tokens = tokenizer(
                 batch,
                 padding=True,
                 truncation=True,
-                max_length=max_length,
-                return_tensors="pt",
-            )
-            toks = {k: v.to(device) for k, v in toks.items()}
-            out = model(**toks)
-            mask = toks["attention_mask"].unsqueeze(-1).float()
-            pooled = (out.last_hidden_state * mask).sum(dim=1) / mask.sum(dim=1).clamp(min=1e-9)
-            batches.append(pooled.cpu().numpy().astype(np.float32))
-    return np.vstack(batches)
+                return_tensors="pt"
+            ).to(device)
 
+            outputs = model(**tokens)
+            hidden = outputs.last_hidden_state
 
-def prepare_smiles_table(input_csv, id_col=None, smiles_col="smiles"):
-    df = pd.read_csv(input_csv)
+            mask = tokens["attention_mask"].unsqueeze(-1)
+            pooled = (hidden * mask).sum(dim=1) / mask.sum(dim=1)
 
-    if id_col is None:
-        if "molecule_chembl_id" in df.columns:
-            id_col = "molecule_chembl_id"
-        elif "drugbank_id" in df.columns:
-            id_col = "drugbank_id"
-        elif "drug_id" in df.columns:
-            id_col = "drug_id"
-        else:
-            raise ValueError("Could not infer an ID column. Set --id_col.")
+            pooled = F.normalize(pooled, p=2, dim=1)
 
-    if smiles_col in df.columns:
-        work = df[[id_col, smiles_col]].rename(columns={id_col: "drug_id", smiles_col: "smiles"})
-    else:
-        work = fetch_smiles_from_chembl(df[id_col].dropna().tolist())
+            all_embeddings.append(pooled.cpu().numpy())
 
-    work["smiles"] = work["smiles"].apply(canonicalize_smiles)
-    work = work.dropna(subset=["drug_id", "smiles"]).drop_duplicates(subset=["drug_id"]).reset_index(drop=True)
-    return work
-
-
-def generate_drug_embeddings(input_csv, output_csv, id_col=None, smiles_col="smiles", backend="molformer"):
-    smiles_df = prepare_smiles_table(input_csv=input_csv, id_col=id_col, smiles_col=smiles_col)
-    smiles = smiles_df["smiles"].tolist()
-
-    used_backend = backend
-    if backend == "molformer":
-        try:
-            vectors = molformer_embeddings(smiles)
-        except Exception as exc:
-            print(f"[warn] MolFormer failed ({exc}); falling back to Morgan fingerprints.")
-            vectors = morgan_embeddings(smiles)
-            used_backend = "morgan"
-    else:
-        vectors = morgan_embeddings(smiles)
-
-    emb_df = pd.DataFrame(vectors)
-    emb_df.columns = [f"drug_emb_{i}" for i in range(emb_df.shape[1])]
-    out_df = pd.concat([smiles_df[["drug_id", "smiles"]], emb_df], axis=1)
-    out_df["embedding_backend"] = used_backend
-
-    out_path = Path(output_csv)
-    out_path.parent.mkdir(parents=True, exist_ok=True)
-    out_df.to_csv(out_path, index=False)
-    print(f"Saved {len(out_df)} drug embeddings to {out_path}")
-    return out_df
+    return np.vstack(all_embeddings)
 
 
 def main():
-    project_root = Path(__file__).resolve().parents[2]
-    default_input = project_root / "data" / "raw" / "chembl_pd_interactions_auto.csv"
-    if not default_input.exists():
-        default_input = project_root / "data" / "processed" / "fda_approved_drugs.csv"
+    project_root = Path(__file__).resolve().parents[2]  # Thesis_project
+    input_path = project_root / "data" / "processed" / "fda_approved_drugs.csv"
+    output_path = project_root / "data" / "processed" / "drug_embeddings.csv"
 
-    parser = argparse.ArgumentParser(description="Generate drug embeddings from SMILES.")
-    parser.add_argument("--input_csv", type=Path, default=default_input)
-    parser.add_argument("--output_csv", type=Path, default=project_root / "data" / "processed" / "drug_embeddings.csv")
-    parser.add_argument("--id_col", type=str, default=None)
-    parser.add_argument("--smiles_col", type=str, default="smiles")
-    parser.add_argument("--backend", type=str, choices=["morgan", "molformer"], default="molformer")
-    args = parser.parse_args()
+    print("[info] Loading FDA-approved drugs...")
+    df = load_data(input_path)
 
-    generate_drug_embeddings(
-        input_csv=args.input_csv,
-        output_csv=args.output_csv,
-        id_col=args.id_col,
-        smiles_col=args.smiles_col,
-        backend=args.backend,
+    print(f"[info] {len(df)} drugs loaded")
+
+    tokenizer, model, device = load_model()
+
+    print("[info] Generating embeddings...")
+    embeddings = embed_smiles(df["smiles"].tolist(), tokenizer, model, device)
+
+    emb_df = pd.DataFrame(
+        embeddings,
+        columns=[f"drug_emb_{i}" for i in range(embeddings.shape[1])]
     )
+
+    result = pd.concat([df, emb_df], axis=1)
+
+    result.to_csv(output_path, index=False)
+
+    print(f"[done] Saved to {output_path}")
 
 
 if __name__ == "__main__":
