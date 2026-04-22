@@ -4,31 +4,16 @@ from pathlib import Path
 import time
 
 
-# -------------------------
-# STEP 1: Get Parkinson-related molecules from indications
-# Used only to discover relevant targets, not to restrict final activities
-# -------------------------
 def get_pd_molecules():
     rows = list(new_client.drug_indication.filter(efo_term__icontains="parkinson"))
-
-    mol_ids = sorted({
-        r.get("molecule_chembl_id")
-        for r in rows
-        if r.get("molecule_chembl_id")
-    })
-
+    mol_ids = sorted({r.get("molecule_chembl_id") for r in rows if r.get("molecule_chembl_id")})
     return mol_ids, pd.DataFrame(rows)
 
 
-# -------------------------
-# STEP 2: Get targets from Parkinson-related molecules
-# -------------------------
 def get_targets_from_molecules(molecule_ids):
     rows = []
-
     for mid in molecule_ids:
         mechs = new_client.mechanism.filter(molecule_chembl_id=mid)
-
         for m in mechs:
             tid = m.get("target_chembl_id")
             if tid:
@@ -38,19 +23,13 @@ def get_targets_from_molecules(molecule_ids):
                     "mechanism_of_action": m.get("mechanism_of_action"),
                     "action_type": m.get("action_type"),
                 })
-
     mech_df = pd.DataFrame(rows)
     target_ids = sorted(set(mech_df["target_chembl_id"])) if not mech_df.empty else []
-
     return target_ids, mech_df
 
 
-# -------------------------
-# STEP 3: Fetch target metadata
-# -------------------------
 def get_target_metadata(target_ids):
     rows = []
-
     for tid in target_ids:
         t = new_client.target.get(tid)
         rows.append({
@@ -59,69 +38,37 @@ def get_target_metadata(target_ids):
             "target_type": t.get("target_type"),
             "organism": t.get("organism"),
         })
-
     return pd.DataFrame(rows)
 
 
-# -------------------------
-# STEP 4: Keep only human single-protein targets
-# -------------------------
 def filter_targets(target_df):
     if target_df.empty:
         return []
-
     keep = target_df[
         (target_df["organism"] == "Homo sapiens") &
         (target_df["target_type"] == "SINGLE PROTEIN")
-    ]
-
+        ]
     return sorted(set(keep["target_chembl_id"]))
 
 
-# -------------------------
-# STEP 5: Document year
-# -------------------------
 def get_document_year(document_ids):
     doc_map = {}
-
     for doc_id in document_ids:
         try:
             doc = new_client.document.get(doc_id)
             doc_map[doc_id] = doc.get("year")
         except Exception:
             doc_map[doc_id] = None
-
     return doc_map
 
 
-# -------------------------
-# STEP 6: Fetch ALL biologically meaningful activities for PD-relevant targets
-# This is the big conceptual change:
-# we no longer keep only Parkinson-indicated molecules
-# -------------------------
-def fetch_target_activities(
-    target_ids,
-    standard_types=("IC50", "Ki", "Kd"),
-    max_rows_per_target=5000,
-    max_retries=3,
-):
+def fetch_target_activities(target_ids, standard_types=("IC50", "Ki", "Kd"), max_rows_per_target=5000, max_retries=3):
     rows = []
-
-    columns = [
-        "target_chembl_id",
-        "molecule_chembl_id",
-        "standard_type",
-        "standard_value",
-        "standard_units",
-        "standard_relation",
-        "pchembl_value",
-        "assay_chembl_id",
-        "document_chembl_id",
-    ]
+    columns = ["target_chembl_id", "molecule_chembl_id", "standard_type", "standard_value",
+               "standard_units", "standard_relation", "pchembl_value", "assay_chembl_id", "document_chembl_id"]
 
     for idx, tid in enumerate(target_ids, start=1):
         print(f"[{idx}/{len(target_ids)}] Fetching activities for {tid}")
-
         success = False
         for attempt in range(1, max_retries + 1):
             try:
@@ -129,11 +76,10 @@ def fetch_target_activities(
                     new_client.activity.filter(
                         target_chembl_id=tid,
                         standard_type__in=list(standard_types),
-                        assay_type="B",               # binding assays only
-                        standard_relation="=",        # exact measurements
-                        pchembl_value__isnull=False,  # normalized potency available
-                    )
-                    .only(columns)
+                        assay_type="B",
+                        standard_relation="=",
+                        pchembl_value__isnull=False,
+                    ).only(columns)
                 )[:max_rows_per_target]
 
                 for a in acts:
@@ -148,41 +94,26 @@ def fetch_target_activities(
                         "assay_chembl_id": a.get("assay_chembl_id"),
                         "document_chembl_id": a.get("document_chembl_id"),
                     })
-
                 success = True
                 break
-
             except Exception as exc:
                 wait_s = 2 ** (attempt - 1)
                 print(f"  [retry {attempt}/{max_retries}] {tid} failed: {exc}")
                 if attempt < max_retries:
-                    print(f"  waiting {wait_s}s before retry...")
                     time.sleep(wait_s)
-
         if not success:
             print(f"  [skip] Could not fetch activities for {tid}")
-
     return pd.DataFrame(rows)
 
 
-# -------------------------
-# STEP 7: Turn potency into a training label
-# biologically meaningful = stronger binding
-# -------------------------
 def add_interaction_label(df, positive_pchembl_threshold=6.0):
     df = df.copy()
-
     df["pchembl_value"] = pd.to_numeric(df["pchembl_value"], errors="coerce")
     df["standard_value"] = pd.to_numeric(df["standard_value"], errors="coerce")
-
     df["label"] = (df["pchembl_value"] >= positive_pchembl_threshold).astype(int)
-
     return df
 
 
-# -------------------------
-# STEP 8: Save useful intermediate files
-# -------------------------
 def save_intermediates(out_dir, indication_df, mech_df, target_df, act_df):
     indication_df.to_csv(out_dir / "pd_indications.csv", index=False)
     mech_df.to_csv(out_dir / "pd_mechanisms.csv", index=False)
@@ -190,61 +121,40 @@ def save_intermediates(out_dir, indication_df, mech_df, target_df, act_df):
     act_df.to_csv(out_dir / "pd_target_activities_raw.csv", index=False)
 
 
-# -------------------------
-# MAIN
-# -------------------------
 def main():
     project_root = Path(__file__).resolve().parents[2]
     out_dir = project_root / "data" / "raw"
     out_dir.mkdir(parents=True, exist_ok=True)
-
     final_out_file = out_dir / "chembl_pd_interactions.csv"
 
-    # 1. Parkinson-related molecules
     molecule_ids, indication_df = get_pd_molecules()
     print(f"[info] PD molecules from indication search: {len(molecule_ids)}")
 
-    # 2. Targets from those molecules
     target_ids, mech_df = get_targets_from_molecules(molecule_ids)
     print(f"[info] Raw targets from mechanisms: {len(target_ids)}")
 
-    # 3. Metadata + filtering
     target_df = get_target_metadata(target_ids)
     filtered_target_ids = filter_targets(target_df)
     print(f"[info] Filtered targets (human + single protein): {len(filtered_target_ids)}")
 
-    # 4. Fetch all meaningful activities for those targets
-    act_df = fetch_target_activities(
-        target_ids=filtered_target_ids,
-        standard_types=("IC50", "Ki", "Kd"),
-        max_rows_per_target=5000,
-        max_retries=3,
-    )
-
+    act_df = fetch_target_activities(filtered_target_ids)
     print(f"[info] Raw activity rows fetched: {len(act_df)}")
 
-    # 5. Add year
     if not act_df.empty:
         doc_ids = act_df["document_chembl_id"].dropna().unique()
         doc_map = get_document_year(doc_ids)
         act_df["year"] = act_df["document_chembl_id"].map(doc_map)
+        act_df = add_interaction_label(act_df, positive_pchembl_threshold=6.0)
 
-    # 6. Add label
-    act_df = add_interaction_label(act_df, positive_pchembl_threshold=6.0)
-
-    # 7. Merge target metadata
-    if not act_df.empty:
         combined = act_df.merge(target_df, on="target_chembl_id", how="left")
         combined = combined.drop_duplicates().reset_index(drop=True)
     else:
         combined = pd.DataFrame()
 
-    # 8. Save intermediates
     save_intermediates(out_dir, indication_df, mech_df, target_df, act_df)
-
-    # 9. Final file
     combined.to_csv(final_out_file, index=False)
-    print(f"[done] Saved final dataset: {final_out_file}")
+
+    print(f"[done] Saved final interactions dataset: {final_out_file}")
     print(f"[done] Final rows: {len(combined)}")
 
 

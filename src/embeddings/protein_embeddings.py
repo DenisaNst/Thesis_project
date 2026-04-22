@@ -1,4 +1,3 @@
-
 from pathlib import Path
 import argparse
 import numpy as np
@@ -77,12 +76,12 @@ def esm_mean_pooled_embeddings(
 
     all_embeddings = []
 
-    # ESM tokenizers expect amino acids separated by spaces.
-    seq_texts = [" ".join(list(seq)) for seq in sequences]
+    # ESM-2 tokenizer expects continuous strings, no spaces needed!
+    seq_texts = sequences
 
     with torch.no_grad():
         for i in range(0, len(seq_texts), batch_size):
-            batch_texts = seq_texts[i : i + batch_size]
+            batch_texts = seq_texts[i: i + batch_size]
 
             toks = tokenizer(
                 batch_texts,
