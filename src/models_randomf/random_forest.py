@@ -42,12 +42,12 @@ def main() -> None:
     parser.add_argument(
         "--model_path",
         type=Path,
-        default=project_root / "artifacts" / "rf" / "rf_model.pkl",
+        default=project_root / "random_forest" / "rf_baseline" / "rf_model.pkl",
     )
     parser.add_argument(
         "--metadata_path",
         type=Path,
-        default=project_root / "artifacts" / "rf" / "rf_metadata.json",
+        default=project_root / "random_forest" / "rf_baseline" / "rf_metadata.json",
     )
     parser.add_argument(
         "--drug_embeddings_csv",
@@ -75,7 +75,7 @@ def main() -> None:
     parser.add_argument(
         "--output_csv",
         type=Path,
-        default=project_root / "artifacts" / "rf" / "fda_target_scores.csv",
+        default=project_root / "random_forest" / "rf_baseline" / "fda_target_scores.csv",
     )
     args = parser.parse_args()
 

@@ -169,7 +169,7 @@ def llm_text_embeddings(
             elif hasattr(outputs, "hidden_states") and outputs.hidden_states:
                 hidden = outputs.hidden_states[-1]
             elif hasattr(outputs, "logits") and outputs.logits is not None:
-                # Fallback for some causal models if hidden states are not directly exposed.
+                # Fallback for some causal models_GNN if hidden states are not directly exposed.
                 hidden = outputs.logits
                 warnings.warn(
                     "Falling back to logits for phenotype embeddings because hidden states were unavailable. "
