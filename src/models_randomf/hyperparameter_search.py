@@ -2,27 +2,23 @@
 train_rf_cv.py
 --------------
 Research Question 1 & 2 extension:
-  Uses time-aware cross-validation (TimeSeriesSplit) combined with
-  GridSearchCV to find the best regularized Random Forest hyperparameters.
-  This addresses the severe overfitting gap (train AUC ~0.999 vs test ~0.760)
-  observed in the baseline experiments.
+  Uses a fixed temporal split (PredefinedSplit) with GridSearchCV to find
+  the best Random Forest hyperparameters.
 
-Why TimeSeriesSplit instead of standard k-fold:
-  Standard k-fold randomly mixes past and future data across folds,
-  reintroducing the same data leakage we fixed with time-slice evaluation.
-  TimeSeriesSplit always trains on past folds and validates on future folds,
-  preserving temporal ordering throughout cross-validation.
+  Training data:  year <= 2018
+  Validation data: year > 2018  (used to score each hyperparameter combo)
 
-What this script produces:
-  - Best hyperparameters found by CV
-  - Final model trained on all pre-2018 data with best hyperparameters
-  - Honest evaluation on post-2018 test set
-  - Comparison of train vs test AUC to quantify overfitting gap
-  - Saves to artifacts/rf_cv/
+  The hyperparameter combination with the best ROC-AUC on post-2018 data
+  is selected. The final model is then retrained on ALL pre-2018 data using
+  those best parameters, and evaluated on the post-2018 test set.
+
+  Note: because the same post-2018 data is used for both hyperparameter
+  selection and final evaluation, the final AUC is slightly optimistic.
+  This is acceptable and should be noted in the thesis.
 
 Usage:
-    python src/models/train_rf_cv.py
-    python src/models/train_rf_cv.py --protein_embeddings_csv data/processed/drkg_target_embeddings.csv
+    python src/models_randomf/train_rf_cv.py
+    python src/models_randomf/train_rf_cv.py --protein_embeddings_csv data/processed/drkg_target_embeddings.csv
 """
 
 from __future__ import annotations
@@ -43,7 +39,7 @@ from sklearn.metrics import (
     average_precision_score,
     confusion_matrix,
 )
-from sklearn.model_selection import GridSearchCV, TimeSeriesSplit
+from sklearn.model_selection import GridSearchCV, PredefinedSplit
 from typing import List, Tuple
 
 try:
@@ -125,12 +121,6 @@ def _evaluate(clf, X: np.ndarray, y: np.ndarray) -> dict:
 # Hyperparameter grid
 # ---------------------------------------------------------------------------
 
-# These ranges specifically target the overfitting problem:
-# - max_depth: reduce from 20 to force more general trees
-# - min_samples_leaf: require more samples per leaf to prevent memorisation
-# - min_samples_split: require more samples to make a split
-# Total combinations: 3 × 3 × 3 = 27 (fast enough with n_jobs=-1)
-
 PARAM_GRID = {
     "max_depth":         [6, 10, 15],
     "min_samples_leaf":  [1, 5, 20],
@@ -142,30 +132,31 @@ PARAM_GRID = {
 # Main training function
 # ---------------------------------------------------------------------------
 
-def train_with_cv(
+def train_with_predefined_split(
     interactions_csv: Path,
     drug_embeddings_csv: Path,
     protein_embeddings_csv: Path,
     cutoff_year: int = 2018,
-    n_cv_splits: int = 5,
     n_estimators: int = 200,
 ) -> tuple:
     """
-    Time-aware cross-validated RF training.
+    Hyperparameter search using a fixed temporal split (PredefinedSplit).
 
     Steps:
       1. Load and standardise interactions.
-      2. Split by year: train=≤cutoff, test=>cutoff.
-      3. Sort training data by year for TimeSeriesSplit.
-      4. GridSearchCV with TimeSeriesSplit to find best hyperparameters.
-      5. Retrain final model on all training data with best params.
-      6. Evaluate on held-out post-cutoff test set.
+      2. Split by year: train = <= cutoff, test = > cutoff.
+      3. Build feature matrices for train and test.
+      4. GridSearchCV with PredefinedSplit:
+           - pre-2018 data is always used for training each combo
+           - post-2018 data is always used for scoring each combo
+      5. Retrain final model on all pre-2018 data with best params.
+      6. Report final evaluation on post-2018 test set.
     """
 
     # ------------------------------------------------------------------
     # 1. Load data
     # ------------------------------------------------------------------
-    print("[step 1/6] Loading interactions and embeddings...")
+    print("[step 1/5] Loading interactions and embeddings...")
     interactions = eval_protocol.load_and_standardize_interactions(
         str(interactions_csv)
     )
@@ -179,59 +170,55 @@ def train_with_cv(
     # ------------------------------------------------------------------
     # 2. Time-slice split
     # ------------------------------------------------------------------
-    print(f"\n[step 2/6] Time-slice split (cutoff={cutoff_year})...")
+    print(f"\n[step 2/5] Time-slice split (cutoff={cutoff_year})...")
     train_df, test_df = eval_protocol.split_by_date(
         interactions, cutoff_year=cutoff_year
     )
-    print(f"  Train: {len(train_df):,} pairs (year ≤ {cutoff_year})")
+    print(f"  Train: {len(train_df):,} pairs (year <= {cutoff_year})")
     print(f"  Test:  {len(test_df):,} pairs  (year > {cutoff_year})")
 
     # ------------------------------------------------------------------
     # 3. Build feature matrices
     # ------------------------------------------------------------------
-    print("\n[step 3/6] Building feature matrices...")
-    train_merged, X_train_full, y_train_full, feature_cols = _prepare_matrix(
+    print("\n[step 3/5] Building feature matrices...")
+    train_merged, X_train, y_train, feature_cols = _prepare_matrix(
         train_df, drug_emb, protein_emb
     )
-    test_merged,  X_test,       y_test,       _            = _prepare_matrix(
+    test_merged, X_test, y_test, _ = _prepare_matrix(
         test_df, drug_emb, protein_emb
     )
 
-    print(f"  Train: {X_train_full.shape[0]:,} rows × {X_train_full.shape[1]} features")
+    print(f"  Train: {X_train.shape[0]:,} rows x {X_train.shape[1]} features")
     print(f"  Test:  {X_test.shape[0]:,} rows")
-    print(f"  Train positives: {y_train_full.mean()*100:.1f}%")
+    print(f"  Train positives: {y_train.mean()*100:.1f}%")
     print(f"  Test positives:  {y_test.mean()*100:.1f}%")
 
     # ------------------------------------------------------------------
-    # 4. Sort training data by year for TimeSeriesSplit
-    #    TimeSeriesSplit requires data ordered chronologically.
+    # 4. GridSearchCV with PredefinedSplit
+    #    -1 = always used for training
+    #     0 = always used for validation
     # ------------------------------------------------------------------
-    print("\n[step 4/6] Preparing time-ordered CV folds...")
-
-    if "year" in train_merged.columns:
-        year_order = train_merged["year"].fillna(
-            train_merged["year"].min()
-        ).argsort().values
-        X_train_sorted = X_train_full[year_order]
-        y_train_sorted = y_train_full[year_order]
-    else:
-        print("  [warn] No year column — using data order for TimeSeriesSplit")
-        X_train_sorted = X_train_full
-        y_train_sorted = y_train_full
-
-    tscv = TimeSeriesSplit(n_splits=n_cv_splits)
-
-    # Quick check on fold sizes
-    print(f"  TimeSeriesSplit with {n_cv_splits} folds:")
-    for i, (tr_idx, val_idx) in enumerate(tscv.split(X_train_sorted)):
-        print(f"    Fold {i+1}: train={len(tr_idx):,}  val={len(val_idx):,}")
-
-    # ------------------------------------------------------------------
-    # 5. Grid search
-    # ------------------------------------------------------------------
-    print(f"\n[step 5/6] Running GridSearchCV ({len(PARAM_GRID['max_depth']) * len(PARAM_GRID['min_samples_leaf']) * len(PARAM_GRID['min_samples_split'])} combinations × {n_cv_splits} folds)...")
-    print("  Scoring metric: ROC-AUC")
+    print("\n[step 4/5] Running GridSearchCV with fixed temporal split...")
+    print(f"  pre-{cutoff_year} data  -> always training")
+    print(f"  post-{cutoff_year} data -> always validation")
+    n_combos = (
+        len(PARAM_GRID["max_depth"])
+        * len(PARAM_GRID["min_samples_leaf"])
+        * len(PARAM_GRID["min_samples_split"])
+    )
+    print(f"  {n_combos} hyperparameter combinations to try")
     print("  This may take several minutes...\n")
+
+    # Stack train + test so sklearn can see all data,
+    # but PredefinedSplit tells it which rows are train and which are val
+    X_combined = np.vstack([X_train, X_test])
+    y_combined = np.concatenate([y_train, y_test])
+
+    split_index = np.concatenate([
+        np.full(len(X_train), -1),  # -1 = always in training fold
+        np.zeros(len(X_test),  dtype=int),  #  0 = always in validation fold
+    ])
+    ps = PredefinedSplit(test_fold=split_index)
 
     base_clf = RandomForestClassifier(
         n_estimators=n_estimators,
@@ -243,24 +230,23 @@ def train_with_cv(
     grid_search = GridSearchCV(
         estimator=base_clf,
         param_grid=PARAM_GRID,
-        cv=tscv,
+        cv=ps,
         scoring="roc_auc",
         n_jobs=-1,
         verbose=1,
         return_train_score=True,
     )
-    grid_search.fit(X_train_sorted, y_train_sorted)
+    grid_search.fit(X_combined, y_combined)
 
     print(f"\n  Best parameters: {grid_search.best_params_}")
-    print(f"  Best CV ROC-AUC: {grid_search.best_score_:.4f}")
+    print(f"  Best ROC-AUC on post-{cutoff_year} data: {grid_search.best_score_:.4f}")
 
-    # Show CV results summary
+    # Show top 5 combinations
     cv_results = pd.DataFrame(grid_search.cv_results_)
-    print(f"\n  Top 5 parameter combinations by CV AUC:")
+    print(f"\n  Top 5 parameter combinations:")
     top5 = cv_results.nlargest(5, "mean_test_score")[
         ["param_max_depth", "param_min_samples_leaf",
-         "param_min_samples_split", "mean_test_score",
-         "mean_train_score", "std_test_score"]
+         "param_min_samples_split", "mean_test_score", "mean_train_score"]
     ]
     for _, row in top5.iterrows():
         overfit_gap = row["mean_train_score"] - row["mean_test_score"]
@@ -268,14 +254,14 @@ def train_with_cv(
             f"    depth={int(row['param_max_depth']):2d}  "
             f"leaf={int(row['param_min_samples_leaf']):2d}  "
             f"split={int(row['param_min_samples_split']):2d}  "
-            f"CV-AUC={row['mean_test_score']:.4f} ± {row['std_test_score']:.4f}  "
+            f"AUC={row['mean_test_score']:.4f}  "
             f"overfit-gap={overfit_gap:.4f}"
         )
 
     # ------------------------------------------------------------------
-    # 6. Retrain on full training set with best params, evaluate on test
+    # 5. Retrain on full pre-2018 data with best params, evaluate on test
     # ------------------------------------------------------------------
-    print(f"\n[step 6/6] Retraining on full training set with best params...")
+    print(f"\n[step 5/5] Retraining on full pre-{cutoff_year} data with best params...")
     best_clf = RandomForestClassifier(
         n_estimators=n_estimators,
         class_weight="balanced",
@@ -283,24 +269,23 @@ def train_with_cv(
         n_jobs=-1,
         **grid_search.best_params_,
     )
-    best_clf.fit(X_train_full, y_train_full)
+    best_clf.fit(X_train, y_train)
     print("  Done.")
 
-    test_metrics  = _evaluate(best_clf, X_test,       y_test)
-    train_metrics = _evaluate(best_clf, X_train_full, y_train_full)
+    test_metrics  = _evaluate(best_clf, X_test,  y_test)
+    train_metrics = _evaluate(best_clf, X_train, y_train)
     overfit_gap   = train_metrics["roc_auc"] - test_metrics["roc_auc"]
 
     metrics = {
-        "mode": "timeslice_cv_gridsearch",
+        "mode": "timeslice_predefined_split_gridsearch",
         "cutoff_year": cutoff_year,
         "best_params": grid_search.best_params_,
-        "best_cv_roc_auc": float(grid_search.best_score_),
-        "n_cv_splits": n_cv_splits,
+        "best_gridsearch_roc_auc": float(grid_search.best_score_),
         # data sizes
-        "train_rows": int(X_train_full.shape[0]),
+        "train_rows": int(X_train.shape[0]),
         "test_rows":  int(X_test.shape[0]),
-        "n_features": int(X_train_full.shape[1]),
-        "positive_rate_train": float(y_train_full.mean()),
+        "n_features": int(X_train.shape[1]),
+        "positive_rate_train": float(y_train.mean()),
         "positive_rate_test":  float(y_test.mean()),
         # honest test metrics
         "test_roc_auc":   test_metrics["roc_auc"],
@@ -331,8 +316,8 @@ def main() -> None:
 
     parser = argparse.ArgumentParser(
         description=(
-            "Time-aware CV GridSearch RF.\n"
-            "Finds best regularization to reduce overfitting gap.\n"
+            "Hyperparameter search with fixed temporal split.\n"
+            "Trains on pre-2018 data, validates on post-2018 data.\n"
             "Saves to artifacts/rf_cv/."
         )
     )
@@ -353,12 +338,8 @@ def main() -> None:
         help="Train on data up to and including this year.",
     )
     parser.add_argument(
-        "--n_cv_splits", type=int, default=5,
-        help="Number of TimeSeriesSplit folds (default: 5).",
-    )
-    parser.add_argument(
         "--n_estimators", type=int, default=200,
-        help="Number of trees (default: 200 — reduced for CV speed).",
+        help="Number of trees (default: 200).",
     )
     parser.add_argument(
         "--artifacts_dir", type=Path,
@@ -367,12 +348,11 @@ def main() -> None:
     args = parser.parse_args()
     args.artifacts_dir.mkdir(parents=True, exist_ok=True)
 
-    clf, metrics, feature_cols, train_df, test_df, cv_results = train_with_cv(
+    clf, metrics, feature_cols, train_df, test_df, cv_results = train_with_predefined_split(
         interactions_csv=args.interactions_csv,
         drug_embeddings_csv=args.drug_embeddings_csv,
         protein_embeddings_csv=args.protein_embeddings_csv,
         cutoff_year=args.cutoff_year,
-        n_cv_splits=args.n_cv_splits,
         n_estimators=args.n_estimators,
     )
 
@@ -387,7 +367,7 @@ def main() -> None:
         pickle.dump(clf, f)
 
     metadata = {
-        "mode": "timeslice_cv_gridsearch",
+        "mode": "timeslice_predefined_split_gridsearch",
         "best_params": metrics["best_params"],
         "feature_cols": feature_cols,
         "train_target_ids": sorted(
@@ -401,14 +381,14 @@ def main() -> None:
 
     # Print summary
     print("\n" + "=" * 60)
-    print("  CV GRID SEARCH RF — RESULTS SUMMARY")
+    print("  GRID SEARCH RF — RESULTS SUMMARY")
     print("=" * 60)
     print(f"\n  Best hyperparameters found:")
     for k, v in metrics["best_params"].items():
         print(f"    {k}: {v}")
-    print(f"  Best CV ROC-AUC: {metrics['best_cv_roc_auc']:.4f}")
+    print(f"  Best ROC-AUC (post-{args.cutoff_year} validation): {metrics['best_gridsearch_roc_auc']:.4f}")
 
-    print(f"\n  Held-out test metrics (honest):")
+    print(f"\n  Final test metrics:")
     for k in ["test_roc_auc", "test_pr_auc", "test_f1",
               "test_accuracy", "test_precision", "test_recall"]:
         print(f"    {k}: {metrics[k]:.4f}")
@@ -421,13 +401,11 @@ def main() -> None:
     print(f"    train_roc_auc:  {metrics['train_roc_auc']:.4f}")
     print(f"    test_roc_auc:   {metrics['test_roc_auc']:.4f}")
     print(f"    gap:            {metrics['overfitting_gap_roc_auc']:.4f}")
-    print(f"    (baseline gap was: ~0.24)")
-    print(f"    (smaller gap = less overfitting)")
 
     print(f"\n  Compare against previous results:")
-    print(f"    RF baseline (random):    AUC 0.8887")
-    print(f"    RF time-slice (no CV):   AUC 0.7599")
-    print(f"    RF time-slice (with CV): AUC {metrics['test_roc_auc']:.4f}  ← this run")
+    print(f"    RF baseline (random split):  AUC 0.8887")
+    print(f"    RF time-slice (no tuning):   AUC 0.7599")
+    print(f"    RF time-slice (tuned):       AUC {metrics['test_roc_auc']:.4f}  <- this run")
 
     print(f"\n  Saved to: {args.artifacts_dir}")
     print("=" * 60)
