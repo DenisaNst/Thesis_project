@@ -19,7 +19,7 @@ Method:
 This directly responds to supervisor feedback pointing to Yang & Dumontier.
 
 Run from project root:
-    python src/models_randomf/similarity_based_partitioning.py
+    python src/models_randomf/similarity_based_DRKG.py
 """
 
 from __future__ import annotations
@@ -33,6 +33,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 import matplotlib
+
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from sklearn.ensemble import RandomForestClassifier
@@ -66,11 +67,9 @@ def load_data():
         str(PROJECT_ROOT / "data/raw/chembl_pd_interactions.csv")
     )
 
-    # Time-slice split — same as all other experiments
     CUTOFF = 2018
     train_int = interactions[interactions["year"] <= CUTOFF].copy()
-    test_int  = interactions[interactions["year"] >  CUTOFF].copy()
-    print(f"  Train: {len(train_int):,} pairs | Test: {len(test_int):,} pairs")
+    test_int = interactions[interactions["year"] > CUTOFF].copy()
 
     # Drug embeddings (ChemBERTa — for feature matrix)
     drug_emb = pd.read_csv(
@@ -254,7 +253,7 @@ def run_experiment(
 
     # Train RF
     clf = RandomForestClassifier(
-        n_estimators=100,   # reduced for speed across many experiments
+        n_estimators=200,
         max_depth=15,
         min_samples_leaf=5,
         min_samples_split=30,
@@ -408,7 +407,7 @@ def main():
     )
 
     clf_base = RandomForestClassifier(
-        n_estimators=100, max_depth=15,
+        n_estimators=200, max_depth=15,
         min_samples_leaf=5, min_samples_split=30,
         class_weight="balanced", random_state=42, n_jobs=-1,
     )
@@ -423,8 +422,7 @@ def main():
     # Drug: Tanimoto similarity (0=completely different, 1=identical)
     # Protein: cosine similarity (0=different, 1=identical)
     drug_thresholds = [1.0, 0.95, 0.90, 0.85, 0.80, 0.75, 0.70, 0.65, 0.60]
-    prot_thresholds = [1.0, 0.99, 0.98, 0.97, 0.96, 0.95, 0.90, 0.85]
-
+    prot_thresholds = [1.0, 0.99, 0.95, 0.8, 0.85, 0.70, 0.6, 0.55, 0.5, 0.4, 0.3]
     results = []
     total = len(drug_thresholds) * len(prot_thresholds)
     done  = 0

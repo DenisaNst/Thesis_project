@@ -1,0 +1,26 @@
+drug_id,drug_name,target_id,score,rank,target_name,_lower,is_known_pd
+DB00864,Tacrolimus,CHEMBL1902,0.9881008856768272,1,Peptidyl-prolyl cis-trans isomerase FKBP1A,tacrolimus,False
+DB06016,Cariprazine,CHEMBL234,0.9716673725777684,2,D(3) dopamine receptor,cariprazine,False
+DB18515,Revumenib,CHEMBL2014,0.9698226084927556,3,Nociceptin receptor,revumenib,False
+DB04835,Maraviroc,CHEMBL2014,0.963979680084862,4,Nociceptin receptor,maraviroc,False
+DB06795,Mafenide,CHEMBL205,0.963378263378931,5,Carbonic anhydrase 2,mafenide,False
+DB00921,Buprenorphine,CHEMBL233,0.961323141086316,6,Mu-type opioid receptor,buprenorphine,False
+DB06796,Mangafodipir,CHEMBL205,0.9605377160051648,7,Carbonic anhydrase 2,mangafodipir,False
+DB00259,Sulfanilamide,CHEMBL205,0.9567644224258328,11,Carbonic anhydrase 2,sulfanilamide,False
+DB17171,Ziftomenib,CHEMBL1908389,0.954798765855814,12,Mitogen-activated protein kinase kinase kinase 12,ziftomenib,False
+DB08901,Ponatinib,CHEMBL1908389,0.954377481249618,13,Mitogen-activated protein kinase kinase kinase 12,ponatinib,False
+DB00819,Acetazolamide,CHEMBL205,0.9539156789582404,14,Carbonic anhydrase 2,acetazolamide,False
+DB15688,Zavegepant,CHEMBL3535,0.953641791258194,15,"High affinity cGMP-specific 3',5'-cyclic phosphodiesterase 9A",zavegepant,False
+DB00869,Dorzolamide,CHEMBL205,0.9511727183145152,18,Carbonic anhydrase 2,dorzolamide,False
+DB01145,Sulfoxone,CHEMBL205,0.9498320112128814,21,Carbonic anhydrase 2,sulfoxone,False
+DB12457,Rimegepant,CHEMBL1908389,0.9496625752807322,22,Mitogen-activated protein kinase kinase kinase 12,rimegepant,False
+DB00796,Candesartan cilexetil,CHEMBL3535,0.9495668379970372,23,"High affinity cGMP-specific 3',5'-cyclic phosphodiesterase 9A",candesartan cilexetil,False
+DB05667,Levoketoconazole,CHEMBL2014,0.9491834699620754,24,Nociceptin receptor,levoketoconazole,False
+DB08897,Aclidinium,CHEMBL245,0.947943645768156,26,Muscarinic acetylcholine receptor M3,aclidinium,False
+DB12001,Abemaciclib,CHEMBL1908389,0.9470580708708096,27,Mitogen-activated protein kinase kinase kinase 12,abemaciclib,False
+DB14019,Fosnetupitant,CHEMBL1908389,0.94692384593469,28,Mitogen-activated protein kinase kinase kinase 12,fosnetupitant,False
+DB06155,Rimonabant,CHEMBL218,0.946258651714784,32,Cannabinoid receptor 1,rimonabant,False
+DB12874,Quizartinib,CHEMBL1908389,0.9459456029320306,34,Mitogen-activated protein kinase kinase kinase 12,quizartinib,False
+DB06813,Pralatrexate,CHEMBL205,0.9437997131863786,39,Carbonic anhydrase 2,pralatrexate,False
+DB00311,Ethoxzolamide,CHEMBL205,0.9437252365443008,40,Carbonic anhydrase 2,ethoxzolamide,False
+DB11596,Levoleucovorin,CHEMBL205,0.9428600887226648,44,Carbonic anhydrase 2,levoleucovorin,False

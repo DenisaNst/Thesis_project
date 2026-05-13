@@ -1,0 +1,352 @@
+drug_id,drug_name,target_id,score,rank,target_name,_lower,is_known_pd
+DB00864,Tacrolimus,CHEMBL1902,0.9881008856768272,1,Peptidyl-prolyl cis-trans isomerase FKBP1A,tacrolimus,False
+DB06016,Cariprazine,CHEMBL234,0.9716673725777684,2,D(3) dopamine receptor,cariprazine,False
+DB18515,Revumenib,CHEMBL2014,0.9698226084927556,3,Nociceptin receptor,revumenib,False
+DB04835,Maraviroc,CHEMBL2014,0.963979680084862,4,Nociceptin receptor,maraviroc,False
+DB06795,Mafenide,CHEMBL205,0.963378263378931,5,Carbonic anhydrase 2,mafenide,False
+DB00921,Buprenorphine,CHEMBL233,0.961323141086316,6,Mu-type opioid receptor,buprenorphine,False
+DB06796,Mangafodipir,CHEMBL205,0.9605377160051648,7,Carbonic anhydrase 2,mangafodipir,False
+DB15328,Ubrogepant,CHEMBL2034,0.9603761858104456,8,Glucocorticoid receptor,ubrogepant,False
+DB09143,Sonidegib,CHEMBL2034,0.9576838222729064,9,Glucocorticoid receptor,sonidegib,False
+DB14019,Fosnetupitant,CHEMBL2034,0.9572566913633378,10,Glucocorticoid receptor,fosnetupitant,False
+DB00259,Sulfanilamide,CHEMBL205,0.9567644224258328,11,Carbonic anhydrase 2,sulfanilamide,False
+DB17171,Ziftomenib,CHEMBL1908389,0.954798765855814,12,Mitogen-activated protein kinase kinase kinase 12,ziftomenib,False
+DB08901,Ponatinib,CHEMBL1908389,0.954377481249618,13,Mitogen-activated protein kinase kinase kinase 12,ponatinib,False
+DB00819,Acetazolamide,CHEMBL205,0.9539156789582404,14,Carbonic anhydrase 2,acetazolamide,False
+DB15688,Zavegepant,CHEMBL3535,0.953641791258194,15,"High affinity cGMP-specific 3',5'-cyclic phosphodiesterase 9A",zavegepant,False
+DB18515,Revumenib,CHEMBL264,0.9524538456674816,16,Histamine H3 receptor,revumenib,False
+DB06016,Cariprazine,CHEMBL2014,0.95152723222131,17,Nociceptin receptor,cariprazine,False
+DB00869,Dorzolamide,CHEMBL205,0.9511727183145152,18,Carbonic anhydrase 2,dorzolamide,False
+DB08867,Ulipristal,CHEMBL2034,0.950819761167671,19,Glucocorticoid receptor,ulipristal,False
+DB04835,Maraviroc,CHEMBL2034,0.950254774119354,20,Glucocorticoid receptor,maraviroc,False
+DB01145,Sulfoxone,CHEMBL205,0.9498320112128814,21,Carbonic anhydrase 2,sulfoxone,False
+DB12457,Rimegepant,CHEMBL1908389,0.9496625752807322,22,Mitogen-activated protein kinase kinase kinase 12,rimegepant,False
+DB00796,Candesartan cilexetil,CHEMBL3535,0.9495668379970372,23,"High affinity cGMP-specific 3',5'-cyclic phosphodiesterase 9A",candesartan cilexetil,False
+DB05667,Levoketoconazole,CHEMBL2014,0.9491834699620754,24,Nociceptin receptor,levoketoconazole,False
+DB08897,Aclidinium,CHEMBL245,0.947943645768156,26,Muscarinic acetylcholine receptor M3,aclidinium,False
+DB12001,Abemaciclib,CHEMBL1908389,0.9470580708708096,27,Mitogen-activated protein kinase kinase kinase 12,abemaciclib,False
+DB14019,Fosnetupitant,CHEMBL1908389,0.94692384593469,28,Mitogen-activated protein kinase kinase kinase 12,fosnetupitant,False
+DB11712,Tezacaftor,CHEMBL2034,0.9467354395920234,30,Glucocorticoid receptor,tezacaftor,False
+DB00947,Fulvestrant,CHEMBL2034,0.9467303037246928,31,Glucocorticoid receptor,fulvestrant,False
+DB06155,Rimonabant,CHEMBL218,0.946258651714784,32,Cannabinoid receptor 1,rimonabant,False
+DB08816,Ticagrelor,CHEMBL2034,0.9461602928348724,33,Glucocorticoid receptor,ticagrelor,False
+DB12874,Quizartinib,CHEMBL1908389,0.9459456029320306,34,Mitogen-activated protein kinase kinase kinase 12,quizartinib,False
+DB08901,Ponatinib,CHEMBL1862,0.9458959888663868,35,Tyrosine-protein kinase ABL1,ponatinib,False
+DB11574,Elbasvir,CHEMBL2034,0.9439331571381048,38,Glucocorticoid receptor,elbasvir,False
+DB06813,Pralatrexate,CHEMBL205,0.9437997131863786,39,Carbonic anhydrase 2,pralatrexate,False
+DB00311,Ethoxzolamide,CHEMBL205,0.9437252365443008,40,Carbonic anhydrase 2,ethoxzolamide,False
+DB12457,Rimegepant,CHEMBL264,0.94356184192092,42,Histamine H3 receptor,rimegepant,False
+DB06016,Cariprazine,CHEMBL264,0.9429852614061548,43,Histamine H3 receptor,cariprazine,False
+DB11596,Levoleucovorin,CHEMBL205,0.9428600887226648,44,Carbonic anhydrase 2,levoleucovorin,False
+DB00293,Raltitrexed,CHEMBL205,0.9428493675825508,45,Carbonic anhydrase 2,raltitrexed,False
+DB06230,Nalmefene,CHEMBL233,0.9426754974814532,46,Mu-type opioid receptor,nalmefene,False
+DB12457,Rimegepant,CHEMBL2014,0.9425362435446782,47,Nociceptin receptor,rimegepant,False
+DB01194,Brinzolamide,CHEMBL205,0.9423978384433184,48,Carbonic anhydrase 2,brinzolamide,False
+DB09030,Vorapaxar,CHEMBL2034,0.9416840450020092,49,Glucocorticoid receptor,vorapaxar,False
+DB08329,Sulthiame,CHEMBL205,0.9411040616464664,50,Carbonic anhydrase 2,sulthiame,False
+DB01232,Saquinavir,CHEMBL2034,0.94025198920063,51,Glucocorticoid receptor,saquinavir,False
+DB09291,Rolapitant,CHEMBL1908389,0.939926211834358,52,Mitogen-activated protein kinase kinase kinase 12,rolapitant,False
+DB01590,Everolimus,CHEMBL1902,0.939765794515127,53,Peptidyl-prolyl cis-trans isomerase FKBP1A,everolimus,False
+DB00251,Terconazole,CHEMBL264,0.9390061864214811,54,Histamine H3 receptor,terconazole,False
+DB18515,Revumenib,CHEMBL1908389,0.938799265954163,55,Mitogen-activated protein kinase kinase kinase 12,revumenib,False
+DB05667,Levoketoconazole,CHEMBL264,0.9382737343853836,56,Histamine H3 receptor,levoketoconazole,False
+DB04835,Maraviroc,CHEMBL264,0.9380863216935276,57,Histamine H3 receptor,maraviroc,False
+DB00251,Terconazole,CHEMBL2014,0.9377280056147989,58,Nociceptin receptor,terconazole,False
+DB15688,Zavegepant,CHEMBL1908389,0.9371752868577286,59,Mitogen-activated protein kinase kinase kinase 12,zavegepant,False
+DB09143,Sonidegib,CHEMBL1908389,0.9371685262558604,60,Mitogen-activated protein kinase kinase kinase 12,sonidegib,False
+DB01126,Dutasteride,CHEMBL2034,0.9369997458888693,61,Glucocorticoid receptor,dutasteride,False
+DB01144,Diclofenamide,CHEMBL205,0.9369364061363432,62,Carbonic anhydrase 2,diclofenamide,False
+DB12597,Asciminib,CHEMBL1862,0.9368996869919938,63,Tyrosine-protein kinase ABL1,asciminib,False
+DB00695,Furosemide,CHEMBL3729,0.9367739447435472,64,Carbonic anhydrase 4,furosemide,False
+DB01076,Atorvastatin,CHEMBL402,0.936514679287062,65,3-hydroxy-3-methylglutaryl-coenzyme A reductase,atorvastatin,False
+DB12282,Defactinib,CHEMBL205,0.9362920855427967,66,Carbonic anhydrase 2,defactinib,False
+DB08816,Ticagrelor,CHEMBL1908389,0.9360616618666474,67,Mitogen-activated protein kinase kinase kinase 12,ticagrelor,False
+DB18515,Revumenib,CHEMBL2034,0.936051725712531,68,Glucocorticoid receptor,revumenib,False
+DB06016,Cariprazine,CHEMBL214,0.935512624339661,69,5-hydroxytryptamine receptor 1A,cariprazine,False
+DB00391,Sulpiride,CHEMBL205,0.9345051713542826,70,Carbonic anhydrase 2,sulpiride,False
+DB01319,Fosamprenavir,CHEMBL205,0.9340446528992788,72,Carbonic anhydrase 2,fosamprenavir,False
+DB16226,Maralixibat,CHEMBL2014,0.9338529201633938,73,Nociceptin receptor,maralixibat,False
+DB21667,Sevabertinib,CHEMBL3535,0.933785873010756,74,"High affinity cGMP-specific 3',5'-cyclic phosphodiesterase 9A",sevabertinib,False
+DB12457,Rimegepant,CHEMBL214,0.9337434993674246,75,5-hydroxytryptamine receptor 1A,rimegepant,False
+DB09143,Sonidegib,CHEMBL245,0.9335814962157531,76,Muscarinic acetylcholine receptor M3,sonidegib,False
+DB06448,Lonafarnib,CHEMBL2014,0.9335439739605788,77,Nociceptin receptor,lonafarnib,False
+DB06441,Cangrelor,CHEMBL205,0.9327822888143918,78,Carbonic anhydrase 2,cangrelor,False
+DB00673,Aprepitant,CHEMBL1908389,0.9327577953718426,79,Mitogen-activated protein kinase kinase kinase 12,aprepitant,False
+DB16226,Maralixibat,CHEMBL1908389,0.9323857263941898,80,Mitogen-activated protein kinase kinase kinase 12,maralixibat,False
+DB09048,Netupitant,CHEMBL1908389,0.9323826684124366,81,Mitogen-activated protein kinase kinase kinase 12,netupitant,False
+DB09195,Lorpiprazole,CHEMBL234,0.9320727543478384,82,D(3) dopamine receptor,lorpiprazole,False
+DB16226,Maralixibat,CHEMBL2034,0.9320005749895508,83,Glucocorticoid receptor,maralixibat,False
+DB18515,Revumenib,CHEMBL234,0.9316095326822468,84,D(3) dopamine receptor,revumenib,False
+DB16217,Leniolisib,CHEMBL264,0.9316053367451004,85,Histamine H3 receptor,leniolisib,False
+DB08815,Lurasidone,CHEMBL264,0.9310690612600796,87,Histamine H3 receptor,lurasidone,False
+DB12095,Telotristat ethyl,CHEMBL205,0.9310501158897698,88,Carbonic anhydrase 2,telotristat ethyl,False
+DB11574,Elbasvir,CHEMBL205,0.9303811426775794,89,Carbonic anhydrase 2,elbasvir,False
+DB14674,Estramustine phosphate,CHEMBL2034,0.930186085358264,90,Glucocorticoid receptor,estramustine phosphate,False
+DB18927,Suzetrigine,CHEMBL1908389,0.9301311119664752,91,Mitogen-activated protein kinase kinase kinase 12,suzetrigine,False
+DB12005,Nirogacestat,CHEMBL2034,0.929896215243277,92,Glucocorticoid receptor,nirogacestat,False
+DB04835,Maraviroc,CHEMBL1908389,0.9298873330763264,93,Mitogen-activated protein kinase kinase kinase 12,maraviroc,False
+DB15328,Ubrogepant,CHEMBL234,0.9296578458078402,94,D(3) dopamine receptor,ubrogepant,False
+DB18968,Elinzanetant,CHEMBL2034,0.9294812411038974,95,Glucocorticoid receptor,elinzanetant,False
+DB09291,Rolapitant,CHEMBL2034,0.9293108375120396,96,Glucocorticoid receptor,rolapitant,False
+DB06636,Isavuconazonium,CHEMBL205,0.9285856762483988,97,Carbonic anhydrase 2,isavuconazonium,False
+DB11611,Lifitegrast,CHEMBL205,0.9283588220399458,98,Carbonic anhydrase 2,lifitegrast,False
+DB09195,Lorpiprazole,CHEMBL2014,0.9282869850919812,99,Nociceptin receptor,lorpiprazole,False
+DB15328,Ubrogepant,CHEMBL2014,0.9281673622218825,101,Nociceptin receptor,ubrogepant,False
+DB16217,Leniolisib,CHEMBL1908389,0.9267344158813868,102,Mitogen-activated protein kinase kinase kinase 12,leniolisib,False
+DB15822,Pralsetinib,CHEMBL1908389,0.9266308937934612,103,Mitogen-activated protein kinase kinase kinase 12,pralsetinib,False
+DB00921,Buprenorphine,CHEMBL264,0.9263731781802363,104,Histamine H3 receptor,buprenorphine,False
+DB06636,Isavuconazonium,CHEMBL2034,0.9263353638660352,105,Glucocorticoid receptor,isavuconazonium,False
+DB15822,Pralsetinib,CHEMBL205,0.9258941148799796,106,Carbonic anhydrase 2,pralsetinib,False
+DB17171,Ziftomenib,CHEMBL205,0.9258631155287363,107,Carbonic anhydrase 2,ziftomenib,False
+DB11979,Elagolix,CHEMBL205,0.9255784468688212,108,Carbonic anhydrase 2,elagolix,False
+DB09335,Alatrofloxacin,CHEMBL2034,0.925521695752532,109,Glucocorticoid receptor,alatrofloxacin,False
+DB14766,Etrasimod,CHEMBL2034,0.925504081262979,110,Glucocorticoid receptor,etrasimod,False
+DB15328,Ubrogepant,CHEMBL1908389,0.9254944966837844,111,Mitogen-activated protein kinase kinase kinase 12,ubrogepant,False
+DB06448,Lonafarnib,CHEMBL234,0.9254080584617516,112,D(3) dopamine receptor,lonafarnib,False
+DB00642,Pemetrexed,CHEMBL205,0.925130534789551,113,Carbonic anhydrase 2,pemetrexed,False
+DB18515,Revumenib,CHEMBL214,0.9249565976861416,114,5-hydroxytryptamine receptor 1A,revumenib,False
+DB15035,Zanubrutinib,CHEMBL2014,0.9248092127308573,115,Nociceptin receptor,zanubrutinib,False
+DB00696,Ergotamine,CHEMBL2034,0.924795514541126,116,Glucocorticoid receptor,ergotamine,False
+DB16226,Maralixibat,CHEMBL234,0.924687013478778,117,D(3) dopamine receptor,maralixibat,False
+DB15444,Elexacaftor,CHEMBL2034,0.9246091139257568,118,Glucocorticoid receptor,elexacaftor,False
+DB14766,Etrasimod,CHEMBL1908389,0.9243664454174094,119,Mitogen-activated protein kinase kinase kinase 12,etrasimod,False
+DB13941,Piperaquine,CHEMBL214,0.924332400185008,120,5-hydroxytryptamine receptor 1A,piperaquine,False
+DB11581,Venetoclax,CHEMBL245,0.9243149904253058,121,Muscarinic acetylcholine receptor M3,venetoclax,False
+DB04835,Maraviroc,CHEMBL234,0.9242507683557162,122,D(3) dopamine receptor,maraviroc,False
+DB12026,Voxilaprevir,CHEMBL2034,0.9240106998476406,123,Glucocorticoid receptor,voxilaprevir,False
+DB01104,Sertraline,CHEMBL238,0.9239940068725434,124,Sodium-dependent dopamine transporter,sertraline,False
+DB00433,Prochlorperazine,CHEMBL2014,0.923927639432712,125,Nociceptin receptor,prochlorperazine,False
+DB08901,Ponatinib,CHEMBL2014,0.9235645653718388,126,Nociceptin receptor,ponatinib,False
+DB15091,Upadacitinib,CHEMBL3535,0.9235561711912972,127,"High affinity cGMP-specific 3',5'-cyclic phosphodiesterase 9A",upadacitinib,False
+DB09195,Lorpiprazole,CHEMBL1908389,0.9234450843539206,128,Mitogen-activated protein kinase kinase kinase 12,lorpiprazole,False
+DB16226,Maralixibat,CHEMBL245,0.9234020386066544,129,Muscarinic acetylcholine receptor M3,maralixibat,False
+DB00251,Terconazole,CHEMBL2034,0.9233786654266172,130,Glucocorticoid receptor,terconazole,False
+DB09297,Paritaprevir,CHEMBL2034,0.923292311976786,131,Glucocorticoid receptor,paritaprevir,False
+DB06717,Fosaprepitant,CHEMBL1908389,0.9229644852441232,132,Mitogen-activated protein kinase kinase kinase 12,fosaprepitant,False
+DB00844,Nalbuphine,CHEMBL233,0.9228843198664048,133,Mu-type opioid receptor,nalbuphine,False
+DB00220,Nelfinavir,CHEMBL2014,0.9228475322203188,134,Nociceptin receptor,nelfinavir,False
+DB09027,Ledipasvir,CHEMBL205,0.9228456737277534,135,Carbonic anhydrase 2,ledipasvir,False
+DB13879,Glecaprevir,CHEMBL2034,0.9223961753725356,136,Glucocorticoid receptor,glecaprevir,False
+DB01591,Solifenacin,CHEMBL264,0.9222388287465622,137,Histamine H3 receptor,solifenacin,False
+DB09268,Picosulfuric acid,CHEMBL205,0.9221876487862162,138,Carbonic anhydrase 2,picosulfuric acid,False
+DB05381,Histamine,CHEMBL264,0.922021940400974,139,Histamine H3 receptor,histamine,False
+DB08815,Lurasidone,CHEMBL2014,0.9218990307666396,140,Nociceptin receptor,lurasidone,False
+DB06717,Fosaprepitant,CHEMBL2034,0.92181187042768,141,Glucocorticoid receptor,fosaprepitant,False
+DB12597,Asciminib,CHEMBL1908389,0.9217528956017448,142,Mitogen-activated protein kinase kinase kinase 12,asciminib,False
+DB12095,Telotristat ethyl,CHEMBL3535,0.9217423632385676,143,"High affinity cGMP-specific 3',5'-cyclic phosphodiesterase 9A",telotristat ethyl,False
+DB01263,Posaconazole,CHEMBL1908389,0.9214465954670004,144,Mitogen-activated protein kinase kinase kinase 12,posaconazole,False
+DB15569,Sotorasib,CHEMBL2034,0.9214230130328308,145,Glucocorticoid receptor,sotorasib,False
+DB12457,Rimegepant,CHEMBL3535,0.9213224458353882,146,"High affinity cGMP-specific 3',5'-cyclic phosphodiesterase 9A",rimegepant,False
+DB14703,Dexamethasone metasulfobenzoate,CHEMBL2034,0.9210748205327752,147,Glucocorticoid receptor,dexamethasone metasulfobenzoate,False
+DB05294,Vandetanib,CHEMBL264,0.9208330508976902,148,Histamine H3 receptor,vandetanib,False
+DB09048,Netupitant,CHEMBL2034,0.9206248086804384,149,Glucocorticoid receptor,netupitant,False
+DB11613,Velpatasvir,CHEMBL2034,0.9205619614546175,150,Glucocorticoid receptor,velpatasvir,False
+DB14019,Fosnetupitant,CHEMBL205,0.9204811421927293,151,Carbonic anhydrase 2,fosnetupitant,False
+DB08897,Aclidinium,CHEMBL2014,0.9203572234493748,152,Nociceptin receptor,aclidinium,False
+DB09195,Lorpiprazole,CHEMBL214,0.9203196364666544,153,5-hydroxytryptamine receptor 1A,lorpiprazole,False
+DB12005,Nirogacestat,CHEMBL1908389,0.9201861761198438,154,Mitogen-activated protein kinase kinase kinase 12,nirogacestat,False
+DB12457,Rimegepant,CHEMBL2034,0.9198871130146618,155,Glucocorticoid receptor,rimegepant,False
+DB00246,Ziprasidone,CHEMBL214,0.9197633925215808,156,5-hydroxytryptamine receptor 1A,ziprasidone,False
+DB00251,Terconazole,CHEMBL1908389,0.919692312063689,157,Mitogen-activated protein kinase kinase kinase 12,terconazole,False
+DB00288,Amcinonide,CHEMBL2034,0.9196602583421294,158,Glucocorticoid receptor,amcinonide,False
+DB08901,Ponatinib,CHEMBL2034,0.9195481285911667,159,Glucocorticoid receptor,ponatinib,False
+DB18738,Ciprocinonide,CHEMBL2034,0.9194155283118044,160,Glucocorticoid receptor,ciprocinonide,False
+DB15328,Ubrogepant,CHEMBL205,0.9192681215177292,161,Carbonic anhydrase 2,ubrogepant,False
+DB05667,Levoketoconazole,CHEMBL2034,0.9192232552779904,162,Glucocorticoid receptor,levoketoconazole,False
+DB11718,Encorafenib,CHEMBL205,0.9191517972173656,163,Carbonic anhydrase 2,encorafenib,False
+DB09027,Ledipasvir,CHEMBL2034,0.9191263882635908,164,Glucocorticoid receptor,ledipasvir,False
+DB00570,Vinblastine,CHEMBL2034,0.9191219401305328,165,Glucocorticoid receptor,vinblastine,False
+DB06786,Halcinonide,CHEMBL2034,0.9189442700403604,167,Glucocorticoid receptor,halcinonide,False
+DB12597,Asciminib,CHEMBL3535,0.9185476043402124,168,"High affinity cGMP-specific 3',5'-cyclic phosphodiesterase 9A",asciminib,False
+DB15568,Adagrasib,CHEMBL1908389,0.9182998671163493,169,Mitogen-activated protein kinase kinase kinase 12,adagrasib,False
+DB17709,Rilzabrutinib,CHEMBL205,0.9182593904808742,170,Carbonic anhydrase 2,rilzabrutinib,False
+DB18737,Procinonide,CHEMBL2034,0.918132350692825,171,Glucocorticoid receptor,procinonide,False
+DB11712,Tezacaftor,CHEMBL1908389,0.9181077598119364,172,Mitogen-activated protein kinase kinase kinase 12,tezacaftor,False
+DB18968,Elinzanetant,CHEMBL1908389,0.9180802037417192,173,Mitogen-activated protein kinase kinase kinase 12,elinzanetant,False
+DB12612,Ozanimod,CHEMBL264,0.9180751436626032,174,Histamine H3 receptor,ozanimod,False
+DB08897,Aclidinium,CHEMBL264,0.9178346698794694,175,Histamine H3 receptor,aclidinium,False
+DB12523,Mizolastine,CHEMBL264,0.9175609141199974,176,Histamine H3 receptor,mizolastine,False
+DB08801,Dimetindene,CHEMBL216,0.9175496344292688,177,Muscarinic acetylcholine receptor M1,dimetindene,False
+DB17171,Ziftomenib,CHEMBL2034,0.917485780898397,178,Glucocorticoid receptor,ziftomenib,False
+DB01232,Saquinavir,CHEMBL2014,0.91725303020756,179,Nociceptin receptor,saquinavir,False
+DB14723,Larotrectinib,CHEMBL264,0.917053817917846,180,Histamine H3 receptor,larotrectinib,False
+DB18927,Suzetrigine,CHEMBL2034,0.9169528792310044,181,Glucocorticoid receptor,suzetrigine,False
+DB01263,Posaconazole,CHEMBL2034,0.9168979858340868,182,Glucocorticoid receptor,posaconazole,False
+DB00823,Ethynodiol diacetate,CHEMBL2034,0.9166876244209212,183,Glucocorticoid receptor,ethynodiol diacetate,False
+DB09425,Indium In-111 pentetate,CHEMBL205,0.9165824931601272,184,Carbonic anhydrase 2,indium in-111 pentetate,False
+DB12015,Alpelisib,CHEMBL2034,0.9164512656035028,185,Glucocorticoid receptor,alpelisib,False
+DB00183,Pentagastrin,CHEMBL205,0.916409728232964,186,Carbonic anhydrase 2,pentagastrin,False
+DB17171,Ziftomenib,CHEMBL3535,0.9163196247301536,187,"High affinity cGMP-specific 3',5'-cyclic phosphodiesterase 9A",ziftomenib,False
+DB12267,Brigatinib,CHEMBL1908389,0.91627916166406,188,Mitogen-activated protein kinase kinase kinase 12,brigatinib,False
+DB11363,Alectinib,CHEMBL3535,0.916162774883037,189,"High affinity cGMP-specific 3',5'-cyclic phosphodiesterase 9A",alectinib,False
+DB00796,Candesartan cilexetil,CHEMBL205,0.9155541676511284,191,Carbonic anhydrase 2,candesartan cilexetil,False
+DB06636,Isavuconazonium,CHEMBL1908389,0.9147059257301782,192,Mitogen-activated protein kinase kinase kinase 12,isavuconazonium,False
+DB11718,Encorafenib,CHEMBL3535,0.9145961681799024,193,"High affinity cGMP-specific 3',5'-cyclic phosphodiesterase 9A",encorafenib,False
+DB05667,Levoketoconazole,CHEMBL214,0.9145503563143909,194,5-hydroxytryptamine receptor 1A,levoketoconazole,False
+DB06274,Alvimopan,CHEMBL2034,0.9140035837171931,195,Glucocorticoid receptor,alvimopan,False
+DB12457,Rimegepant,CHEMBL245,0.9139583414112608,196,Muscarinic acetylcholine receptor M3,rimegepant,False
+DB17171,Ziftomenib,CHEMBL2014,0.9139462765328116,197,Nociceptin receptor,ziftomenib,False
+DB15673,Lenacapavir,CHEMBL1908389,0.9139324503533472,198,Mitogen-activated protein kinase kinase kinase 12,lenacapavir,False
+DB11712,Tezacaftor,CHEMBL2014,0.9138455329741496,199,Nociceptin receptor,tezacaftor,False
+DB09195,Lorpiprazole,CHEMBL2034,0.9137602647217912,200,Glucocorticoid receptor,lorpiprazole,False
+DB06684,Vilazodone,CHEMBL228,0.913107529584744,202,Sodium-dependent serotonin transporter,vilazodone,False
+DB11691,Naldemedine,CHEMBL233,0.9131042515593352,203,Mu-type opioid receptor,naldemedine,False
+DB06077,Lumateperone,CHEMBL264,0.9130955319657312,204,Histamine H3 receptor,lumateperone,False
+DB16019,Gallium Ga-68 gozetotide,CHEMBL205,0.913083123510478,205,Carbonic anhydrase 2,gallium ga-68 gozetotide,False
+DB09195,Lorpiprazole,CHEMBL264,0.9129725037337318,206,Histamine H3 receptor,lorpiprazole,False
+DB00204,Dofetilide,CHEMBL205,0.9127748372835904,207,Carbonic anhydrase 2,dofetilide,False
+DB00361,Vinorelbine,CHEMBL2034,0.9127649326774058,208,Glucocorticoid receptor,vinorelbine,False
+DB06817,Raltegravir,CHEMBL205,0.9125604412432564,209,Carbonic anhydrase 2,raltegravir,False
+DB15822,Pralsetinib,CHEMBL3535,0.91244598723141,210,"High affinity cGMP-specific 3',5'-cyclic phosphodiesterase 9A",pralsetinib,False
+DB12095,Telotristat ethyl,CHEMBL2034,0.9123828765774692,211,Glucocorticoid receptor,telotristat ethyl,False
+DB09345,Pramocaine,CHEMBL264,0.912356023067047,212,Histamine H3 receptor,pramocaine,False
+DB06636,Isavuconazonium,CHEMBL3535,0.9121904395798016,213,"High affinity cGMP-specific 3',5'-cyclic phosphodiesterase 9A",isavuconazonium,False
+DB01409,Tiotropium,CHEMBL2034,0.91216270184017,214,Glucocorticoid receptor,tiotropium,False
+DB01232,Saquinavir,CHEMBL205,0.9120798033660354,215,Carbonic anhydrase 2,saquinavir,False
+DB15035,Zanubrutinib,CHEMBL264,0.912013907992255,216,Histamine H3 receptor,zanubrutinib,False
+DB12513,Omaveloxolone,CHEMBL2034,0.9119307541365822,217,Glucocorticoid receptor,omaveloxolone,False
+DB06717,Fosaprepitant,CHEMBL205,0.911916430059203,218,Carbonic anhydrase 2,fosaprepitant,False
+DB16098,Atogepant,CHEMBL1908389,0.911912091537416,219,Mitogen-activated protein kinase kinase kinase 12,atogepant,False
+DB11262,Bisoctrizole,CHEMBL3535,0.9118864359174852,220,"High affinity cGMP-specific 3',5'-cyclic phosphodiesterase 9A",bisoctrizole,False
+DB12941,Darolutamide,CHEMBL3535,0.9118780230032112,221,"High affinity cGMP-specific 3',5'-cyclic phosphodiesterase 9A",darolutamide,False
+DB12457,Rimegepant,CHEMBL234,0.9116475088444372,222,D(3) dopamine receptor,rimegepant,False
+DB14544,Hydrocortisone valerate,CHEMBL2034,0.9116299944588936,223,Glucocorticoid receptor,hydrocortisone valerate,False
+DB17084,Gadopiclenol,CHEMBL205,0.9114971659179438,224,Carbonic anhydrase 2,gadopiclenol,False
+DB05667,Levoketoconazole,CHEMBL234,0.911482809937498,225,D(3) dopamine receptor,levoketoconazole,False
+DB00850,Perphenazine,CHEMBL2014,0.9111829267115276,226,Nociceptin receptor,perphenazine,False
+DB11799,Bictegravir,CHEMBL2034,0.911079488410148,227,Glucocorticoid receptor,bictegravir,False
+DB18762,Zongertinib,CHEMBL2009,0.910932391348949,228,Glutamate receptor 1,zongertinib,False
+DB11712,Tezacaftor,CHEMBL3535,0.9107819924699996,229,"High affinity cGMP-specific 3',5'-cyclic phosphodiesterase 9A",tezacaftor,False
+DB12134,Gepotidacin,CHEMBL3535,0.9107248314604726,230,"High affinity cGMP-specific 3',5'-cyclic phosphodiesterase 9A",gepotidacin,False
+DB06077,Lumateperone,CHEMBL214,0.9106907349776926,231,5-hydroxytryptamine receptor 1A,lumateperone,False
+DB01047,Fluocinonide,CHEMBL2034,0.9105456175509662,232,Glucocorticoid receptor,fluocinonide,False
+DB06808,Piperacetazine,CHEMBL214,0.9105319302679232,233,5-hydroxytryptamine receptor 1A,piperacetazine,False
+DB09143,Sonidegib,CHEMBL234,0.9104604100540804,235,D(3) dopamine receptor,sonidegib,False
+DB15685,Selpercatinib,CHEMBL1908389,0.9104276673819416,236,Mitogen-activated protein kinase kinase kinase 12,selpercatinib,False
+DB21811,Gozetotide,CHEMBL205,0.9102421952192772,237,Carbonic anhydrase 2,gozetotide,False
+DB11995,Avatrombopag,CHEMBL3535,0.9100747520579252,238,"High affinity cGMP-specific 3',5'-cyclic phosphodiesterase 9A",avatrombopag,False
+DB01167,Itraconazole,CHEMBL2014,0.9099517259320232,239,Nociceptin receptor,itraconazole,False
+DB00482,Celecoxib,CHEMBL205,0.9098758063858592,240,Carbonic anhydrase 2,celecoxib,False
+DB01032,Probenecid,CHEMBL205,0.9098452848386116,241,Carbonic anhydrase 2,probenecid,False
+DB06267,Udenafil,CHEMBL205,0.909804389514684,242,Carbonic anhydrase 2,udenafil,False
+DB15442,Trilaciclib,CHEMBL1908389,0.9097545920248624,243,Mitogen-activated protein kinase kinase kinase 12,trilaciclib,False
+DB15569,Sotorasib,CHEMBL3535,0.9097106477094276,244,"High affinity cGMP-specific 3',5'-cyclic phosphodiesterase 9A",sotorasib,False
+DB01324,Polythiazide,CHEMBL205,0.9096481141151636,245,Carbonic anhydrase 2,polythiazide,False
+DB11979,Elagolix,CHEMBL2034,0.909434035356956,246,Glucocorticoid receptor,elagolix,False
+DB14083,Bisphenol A diglycidyl ether,CHEMBL264,0.9094067139311118,247,Histamine H3 receptor,bisphenol a diglycidyl ether,False
+DB14723,Larotrectinib,CHEMBL234,0.9094046516934284,248,D(3) dopamine receptor,larotrectinib,False
+DB12612,Ozanimod,CHEMBL214,0.9093707770066278,249,5-hydroxytryptamine receptor 1A,ozanimod,False
+DB00921,Buprenorphine,CHEMBL2034,0.9093385559996288,250,Glucocorticoid receptor,buprenorphine,False
+DB15401,Danicopan,CHEMBL205,0.9092963676764768,251,Carbonic anhydrase 2,danicopan,False
+DB00796,Candesartan cilexetil,CHEMBL1908389,0.909224776904224,252,Mitogen-activated protein kinase kinase kinase 12,candesartan cilexetil,False
+DB01591,Solifenacin,CHEMBL214,0.909193036440188,253,5-hydroxytryptamine receptor 1A,solifenacin,False
+DB11799,Bictegravir,CHEMBL1908389,0.9091239618832396,254,Mitogen-activated protein kinase kinase kinase 12,bictegravir,False
+DB00591,Fluocinolone acetonide,CHEMBL2034,0.9089008406997025,255,Glucocorticoid receptor,fluocinolone acetonide,False
+DB11742,Ebastine,CHEMBL234,0.908857078114286,256,D(3) dopamine receptor,ebastine,False
+DB11995,Avatrombopag,CHEMBL1908389,0.9087808640415598,257,Mitogen-activated protein kinase kinase kinase 12,avatrombopag,False
+DB08816,Ticagrelor,CHEMBL2014,0.9087796917679914,258,Nociceptin receptor,ticagrelor,False
+DB00224,Indinavir,CHEMBL2034,0.908679614206203,259,Glucocorticoid receptor,indinavir,False
+DB14583,Segesterone acetate,CHEMBL2034,0.9086627595865148,260,Glucocorticoid receptor,segesterone acetate,False
+DB15091,Upadacitinib,CHEMBL1908389,0.9086151241512218,261,Mitogen-activated protein kinase kinase kinase 12,upadacitinib,False
+DB06808,Piperacetazine,CHEMBL264,0.9085670051857304,262,Histamine H3 receptor,piperacetazine,False
+DB14541,Hydrocortisone cypionate,CHEMBL2034,0.9085294276512452,263,Glucocorticoid receptor,hydrocortisone cypionate,False
+DB08816,Ticagrelor,CHEMBL264,0.908483078346449,264,Histamine H3 receptor,ticagrelor,False
+DB00496,Darifenacin,CHEMBL264,0.908293028750356,265,Histamine H3 receptor,darifenacin,False
+DB13955,Estradiol dienanthate,CHEMBL264,0.9080200510010712,266,Histamine H3 receptor,estradiol dienanthate,False
+DB14895,Vibegron,CHEMBL264,0.9079475910657554,267,Histamine H3 receptor,vibegron,False
+DB08878,Aminopterin,CHEMBL205,0.9077875062079326,268,Carbonic anhydrase 2,aminopterin,False
+DB14539,Hydrocortisone acetate,CHEMBL2034,0.907557714926501,269,Glucocorticoid receptor,hydrocortisone acetate,False
+DB15673,Lenacapavir,CHEMBL2034,0.9075505011129142,270,Glucocorticoid receptor,lenacapavir,False
+DB15569,Sotorasib,CHEMBL1908389,0.9074722884191784,271,Mitogen-activated protein kinase kinase kinase 12,sotorasib,False
+DB04835,Maraviroc,CHEMBL3535,0.907413694346345,272,"High affinity cGMP-specific 3',5'-cyclic phosphodiesterase 9A",maraviroc,False
+DB06016,Cariprazine,CHEMBL1908389,0.9074126101889622,273,Mitogen-activated protein kinase kinase kinase 12,cariprazine,False
+DB01196,Estramustine,CHEMBL2034,0.9070758696894096,274,Glucocorticoid receptor,estramustine,False
+DB14002,D-alpha-Tocopherol acetate,CHEMBL2034,0.9070310704081348,275,Glucocorticoid receptor,d-alpha-tocopherol acetate,False
+DB15688,Zavegepant,CHEMBL205,0.906899529662264,276,Carbonic anhydrase 2,zavegepant,False
+DB00762,Irinotecan,CHEMBL1908389,0.9068197785026636,277,Mitogen-activated protein kinase kinase kinase 12,irinotecan,False
+DB01106,Levocabastine,CHEMBL2014,0.9067886165090672,278,Nociceptin receptor,levocabastine,False
+DB13954,Estradiol cypionate,CHEMBL2034,0.9067505622567196,279,Glucocorticoid receptor,estradiol cypionate,False
+DB15569,Sotorasib,CHEMBL205,0.9067399234705676,280,Carbonic anhydrase 2,sotorasib,False
+DB00309,Vindesine,CHEMBL2034,0.9067236888034582,281,Glucocorticoid receptor,vindesine,False
+DB08934,Sofosbuvir,CHEMBL205,0.906712708787798,282,Carbonic anhydrase 2,sofosbuvir,False
+DB11275,Epicriptine,CHEMBL2034,0.9064705306529208,283,Glucocorticoid receptor,epicriptine,False
+DB00563,Methotrexate,CHEMBL205,0.9064455197641154,284,Carbonic anhydrase 2,methotrexate,False
+DB12095,Telotristat ethyl,CHEMBL1908389,0.9063567491546968,285,Mitogen-activated protein kinase kinase kinase 12,telotristat ethyl,False
+DB06077,Lumateperone,CHEMBL1908389,0.9061916351353312,286,Mitogen-activated protein kinase kinase kinase 12,lumateperone,False
+DB06249,Arzoxifene,CHEMBL264,0.9060399475845606,287,Histamine H3 receptor,arzoxifene,False
+DB16098,Atogepant,CHEMBL2034,0.9060386550529248,288,Glucocorticoid receptor,atogepant,False
+DB14761,Remdesivir,CHEMBL205,0.905984897179314,289,Carbonic anhydrase 2,remdesivir,False
+DB14631,Prednisolone phosphate,CHEMBL2034,0.905935363925408,290,Glucocorticoid receptor,prednisolone phosphate,False
+DB00355,Aztreonam,CHEMBL205,0.9059148632680456,291,Carbonic anhydrase 2,aztreonam,False
+DB06274,Alvimopan,CHEMBL205,0.9057825049563476,292,Carbonic anhydrase 2,alvimopan,False
+DB17171,Ziftomenib,CHEMBL234,0.9057639852205857,293,D(3) dopamine receptor,ziftomenib,False
+DB12597,Asciminib,CHEMBL2034,0.9057162665524988,294,Glucocorticoid receptor,asciminib,False
+DB00220,Nelfinavir,CHEMBL2034,0.905603382881954,295,Glucocorticoid receptor,nelfinavir,False
+DB14895,Vibegron,CHEMBL2014,0.9053116137076446,296,Nociceptin receptor,vibegron,False
+DB06155,Rimonabant,CHEMBL2014,0.9053024817642904,297,Nociceptin receptor,rimonabant,False
+DB01264,Darunavir,CHEMBL205,0.9052555338360692,298,Carbonic anhydrase 2,darunavir,False
+DB15568,Adagrasib,CHEMBL214,0.9052497133889424,299,5-hydroxytryptamine receptor 1A,adagrasib,False
+DB00775,Tirofiban,CHEMBL205,0.9052171251296918,300,Carbonic anhydrase 2,tirofiban,False
+DB08901,Ponatinib,CHEMBL264,0.9051402574442242,301,Histamine H3 receptor,ponatinib,False
+DB00157,NADH,CHEMBL2034,0.9051070878240324,302,Glucocorticoid receptor,nadh,False
+DB12874,Quizartinib,CHEMBL2014,0.9049297246085556,303,Nociceptin receptor,quizartinib,False
+DB14860,Ensartinib,CHEMBL2034,0.9049234710927344,304,Glucocorticoid receptor,ensartinib,False
+DB00846,Flurandrenolide,CHEMBL2034,0.9046521203789316,305,Glucocorticoid receptor,flurandrenolide,False
+DB08912,Dabrafenib,CHEMBL205,0.9046089889559396,306,Carbonic anhydrase 2,dabrafenib,False
+DB08815,Lurasidone,CHEMBL2034,0.9045974434422815,307,Glucocorticoid receptor,lurasidone,False
+DB01232,Saquinavir,CHEMBL264,0.9043931422720882,308,Histamine H3 receptor,saquinavir,False
+DB06448,Lonafarnib,CHEMBL2034,0.9043864378284354,309,Glucocorticoid receptor,lonafarnib,False
+DB00685,Trovafloxacin,CHEMBL2034,0.9043489683034726,310,Glucocorticoid receptor,trovafloxacin,False
+DB00932,Tipranavir,CHEMBL2034,0.904326323003162,311,Glucocorticoid receptor,tipranavir,False
+DB13520,Metergoline,CHEMBL214,0.9042865163689944,312,5-hydroxytryptamine receptor 1A,metergoline,False
+DB09048,Netupitant,CHEMBL3535,0.904267473504394,313,"High affinity cGMP-specific 3',5'-cyclic phosphodiesterase 9A",netupitant,False
+DB09164,Technetium Tc-99m disofenin,CHEMBL205,0.9042007122656064,314,Carbonic anhydrase 2,technetium tc-99m disofenin,False
+DB15688,Zavegepant,CHEMBL2034,0.9041450846852204,315,Glucocorticoid receptor,zavegepant,False
+DB15011,Avacopan,CHEMBL1908389,0.9041231485854302,316,Mitogen-activated protein kinase kinase kinase 12,avacopan,False
+DB05294,Vandetanib,CHEMBL2014,0.904055773723041,317,Nociceptin receptor,vandetanib,False
+DB16261,Odevixibat,CHEMBL205,0.903970182059345,318,Carbonic anhydrase 2,odevixibat,False
+DB00769,Hydrocortamate,CHEMBL2034,0.9039528610024238,319,Glucocorticoid receptor,hydrocortamate,False
+DB00872,Conivaptan,CHEMBL3535,0.9038315016184544,320,"High affinity cGMP-specific 3',5'-cyclic phosphodiesterase 9A",conivaptan,False
+DB00673,Aprepitant,CHEMBL3535,0.9035880514558648,321,"High affinity cGMP-specific 3',5'-cyclic phosphodiesterase 9A",aprepitant,False
+DB04931,Afamelanotide,CHEMBL2014,0.903580915413162,322,Nociceptin receptor,afamelanotide,False
+DB14723,Larotrectinib,CHEMBL214,0.903549085150996,323,5-hydroxytryptamine receptor 1A,larotrectinib,False
+DB00220,Nelfinavir,CHEMBL264,0.9034649156269616,324,Histamine H3 receptor,nelfinavir,False
+DB00673,Aprepitant,CHEMBL2034,0.9034111425110616,325,Glucocorticoid receptor,aprepitant,False
+DB11712,Tezacaftor,CHEMBL264,0.9031873180775172,326,Histamine H3 receptor,tezacaftor,False
+DB13345,Dihydroergocristine,CHEMBL2034,0.9031070468690868,327,Glucocorticoid receptor,dihydroergocristine,False
+DB00385,Valrubicin,CHEMBL2034,0.9029561752836324,328,Glucocorticoid receptor,valrubicin,False
+DB09320,Procaine benzylpenicillin,CHEMBL205,0.902801025301308,329,Carbonic anhydrase 2,procaine benzylpenicillin,False
+DB08911,Trametinib,CHEMBL205,0.9027723299996248,330,Carbonic anhydrase 2,trametinib,False
+DB06808,Piperacetazine,CHEMBL2014,0.9026414595262728,332,Nociceptin receptor,piperacetazine,False
+DB09063,Ceritinib,CHEMBL3535,0.902628757234969,333,"High affinity cGMP-specific 3',5'-cyclic phosphodiesterase 9A",ceritinib,False
+DB15822,Pralsetinib,CHEMBL2034,0.9024652145419964,334,Glucocorticoid receptor,pralsetinib,False
+DB12457,Rimegepant,CHEMBL205,0.9021024622209208,335,Carbonic anhydrase 2,rimegepant,False
+DB00699,Nicergoline,CHEMBL214,0.9020943117537816,336,5-hydroxytryptamine receptor 1A,nicergoline,False
+DB15031,Daridorexant,CHEMBL3535,0.9019990990844606,337,"High affinity cGMP-specific 3',5'-cyclic phosphodiesterase 9A",daridorexant,False
+DB11712,Tezacaftor,CHEMBL2063,0.901957568445218,338,Ceramide glucosyltransferase,tezacaftor,False
+DB12015,Alpelisib,CHEMBL4794,0.9019553605480252,339,Transient receptor potential cation channel subfamily V member 1,alpelisib,False
+DB00157,NADH,CHEMBL205,0.9018292095960648,340,Carbonic anhydrase 2,nadh,False
+DB12941,Darolutamide,CHEMBL205,0.9017979870094064,342,Carbonic anhydrase 2,darolutamide,False
+DB15011,Avacopan,CHEMBL2034,0.9014038283502424,343,Glucocorticoid receptor,avacopan,False
+DB16852,Remibrutinib,CHEMBL205,0.901379872572511,344,Carbonic anhydrase 2,remibrutinib,False
+DB08816,Ticagrelor,CHEMBL214,0.9013628483096668,345,5-hydroxytryptamine receptor 1A,ticagrelor,False
+DB01263,Posaconazole,CHEMBL205,0.901289551305437,346,Carbonic anhydrase 2,posaconazole,False
+DB11742,Ebastine,CHEMBL264,0.9011663770437146,347,Histamine H3 receptor,ebastine,False
+DB12267,Brigatinib,CHEMBL3535,0.9011133731339964,348,"High affinity cGMP-specific 3',5'-cyclic phosphodiesterase 9A",brigatinib,False
+DB06590,Ceftaroline fosamil,CHEMBL205,0.9008571246236188,349,Carbonic anhydrase 2,ceftaroline fosamil,False
+DB00634,Sulfacetamide,CHEMBL205,0.9008471020865588,350,Carbonic anhydrase 2,sulfacetamide,False
+DB08834,Tauroursodeoxycholic acid,CHEMBL2034,0.900660207677454,351,Glucocorticoid receptor,tauroursodeoxycholic acid,False
+DB06595,Midostaurin,CHEMBL214,0.9006579122112227,352,5-hydroxytryptamine receptor 1A,midostaurin,False
+DB05667,Levoketoconazole,CHEMBL1908389,0.9005553025480099,353,Mitogen-activated protein kinase kinase kinase 12,levoketoconazole,False
+DB15685,Selpercatinib,CHEMBL2034,0.9005313416320656,354,Glucocorticoid receptor,selpercatinib,False
+DB00952,Naratriptan,CHEMBL3535,0.9004571892573354,355,"High affinity cGMP-specific 3',5'-cyclic phosphodiesterase 9A",naratriptan,False
+DB11613,Velpatasvir,CHEMBL205,0.9003492984077822,356,Carbonic anhydrase 2,velpatasvir,False
+DB00705,Delavirdine,CHEMBL205,0.9003394018320462,357,Carbonic anhydrase 2,delavirdine,False
+DB02925,Piretanide,CHEMBL205,0.9003191443186142,358,Carbonic anhydrase 2,piretanide,False
+DB06608,Tafenoquine,CHEMBL1908389,0.9003062966114264,359,Mitogen-activated protein kinase kinase kinase 12,tafenoquine,False
+DB18762,Zongertinib,CHEMBL264,0.9002861868860743,360,Histamine H3 receptor,zongertinib,False
+DB01388,Mibefradil,CHEMBL3535,0.9002530342497063,361,"High affinity cGMP-specific 3',5'-cyclic phosphodiesterase 9A",mibefradil,False
+DB16226,Maralixibat,CHEMBL264,0.9002442787169251,362,Histamine H3 receptor,maralixibat,False
+DB11718,Encorafenib,CHEMBL2034,0.900206956790968,363,Glucocorticoid receptor,encorafenib,False
+DB00932,Tipranavir,CHEMBL205,0.9001908437943702,364,Carbonic anhydrase 2,tipranavir,False
+DB15982,Berotralstat,CHEMBL2034,0.900055975418273,365,Glucocorticoid receptor,berotralstat,False

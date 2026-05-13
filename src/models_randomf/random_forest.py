@@ -42,12 +42,12 @@ def main() -> None:
     parser.add_argument(
         "--model_path",
         type=Path,
-        default=project_root / "random_forest" / "rf_baseline" / "rf_model.pkl",
+        default=project_root / "random_forest" / "rf_cv" / "rf_model.pkl",
     )
     parser.add_argument(
         "--metadata_path",
         type=Path,
-        default=project_root / "random_forest" / "rf_baseline" / "rf_metadata.json",
+        default=project_root / "random_forest" / "rf_cv" / "rf_metadata.json",
     )
     parser.add_argument(
         "--drug_embeddings_csv",
@@ -71,11 +71,11 @@ def main() -> None:
         help="Restrict targets to train_target_ids from metadata.",
     )
     parser.add_argument("--batch_size_drugs", type=int, default=256)
-    parser.add_argument("--top_k", type=int, default=500)
+    parser.add_argument("--top_k", type=int)
     parser.add_argument(
         "--output_csv",
         type=Path,
-        default=project_root / "random_forest" / "rf_baseline" / "fda_target_scores.csv",
+        default=project_root / "random_forest" / "rf_cv" / "fda_target_scores.csv",
     )
     args = parser.parse_args()
 

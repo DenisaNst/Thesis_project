@@ -1,10 +1,6 @@
 """
 similarity_based_partitioning.py
 ---------------------------------
-Implements the similarity-based training benchmark from:
-  Yang & Dumontier (2024) "Creating a Robust Training Benchmark
-  for Drug-Target Interaction Predictions"
-  Maastricht University
 
 Method:
   1. Split interactions by time (cutoff 2018) for temporal validity
@@ -16,10 +12,8 @@ Method:
   5. Train RF on filtered training set, evaluate on same test set
   6. Plot AUC vs dataset reduction (Pareto analysis like the paper)
 
-This directly responds to supervisor feedback pointing to Yang & Dumontier.
-
 Run from project root:
-    python src/models_randomf/similarity_based_partitioning.py
+    python src/models_randomf/similarity_based.py
 """
 
 from __future__ import annotations
@@ -49,7 +43,7 @@ try:
 except ImportError:
     from src.evaluation import evaluation_protocol as eval_protocol
 
-OUT_DIR = PROJECT_ROOT / "artifacts" / "rf_similarity"
+OUT_DIR = PROJECT_ROOT / "artifacts" / "rf_similarity_random"
 FIG_DIR = PROJECT_ROOT / "reports" / "figures"
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 FIG_DIR.mkdir(parents=True, exist_ok=True)
@@ -66,10 +60,15 @@ def load_data():
         str(PROJECT_ROOT / "data/raw/chembl_pd_interactions.csv")
     )
 
-    # Time-slice split — same as all other experiments
-    CUTOFF = 2018
-    train_int = interactions[interactions["year"] <= CUTOFF].copy()
-    test_int  = interactions[interactions["year"] >  CUTOFF].copy()
+    # chaged to random split
+    from sklearn.model_selection import train_test_split
+    idx = np.arange(len(interactions))
+    train_idx, test_idx = train_test_split(
+        idx, test_size=0.2, random_state=42,
+        stratify=interactions["label"].values
+    )
+    train_int = interactions.iloc[train_idx].copy().reset_index(drop=True)
+    test_int = interactions.iloc[test_idx].copy().reset_index(drop=True)
     print(f"  Train: {len(train_int):,} pairs | Test: {len(test_int):,} pairs")
 
     # Drug embeddings (ChemBERTa — for feature matrix)
@@ -253,7 +252,7 @@ def run_experiment(
 
     # Train RF
     clf = RandomForestClassifier(
-        n_estimators=100,   # reduced for speed across many experiments
+        n_estimators=200,
         max_depth=15,
         min_samples_leaf=5,
         min_samples_split=30,
@@ -362,7 +361,7 @@ def plot_pareto(results_df, baseline_auc):
     ax2.yaxis.grid(True, alpha=0.4)
 
     plt.tight_layout()
-    out = FIG_DIR / "fig_similarity_partitioning.png"
+    out = FIG_DIR / "fig_similarity_partitioning_random.png"
     plt.savefig(str(out), dpi=150, bbox_inches="tight")
     plt.close()
     print(f"  [saved] {out}")
@@ -374,7 +373,7 @@ def plot_pareto(results_df, baseline_auc):
 
 def main():
     print("=" * 60)
-    print("  Similarity-Based Partitioning (Yang & Dumontier 2024)")
+    print("  Similarity-Based Partitioning Experiment")
     print("=" * 60)
 
     # Load
@@ -407,7 +406,7 @@ def main():
     )
 
     clf_base = RandomForestClassifier(
-        n_estimators=100, max_depth=15,
+        n_estimators=200, max_depth=15,
         min_samples_leaf=5, min_samples_split=30,
         class_weight="balanced", random_state=42, n_jobs=-1,
     )
@@ -421,8 +420,8 @@ def main():
     # Thresholds to try — same range as Yang & Dumontier
     # Drug: Tanimoto similarity (0=completely different, 1=identical)
     # Protein: cosine similarity (0=different, 1=identical)
-    drug_thresholds = [1.0, 0.95, 0.90, 0.85, 0.80, 0.75, 0.70, 0.65, 0.60]
-    prot_thresholds = [1.0, 0.99, 0.98, 0.97, 0.96, 0.95, 0.90, 0.85]
+    drug_thresholds = [1.0, 0.95, 0.9, 0.85, 0.8, 0.75, 0.7, 0.65, 0.6, 0.55, 0.5]
+    prot_thresholds = [1.0, 0.99, 0.98, 0.97, 0.96, 0.95, 0.94, 0.93, 0.92, 0.91, 0.90]
 
     results = []
     total = len(drug_thresholds) * len(prot_thresholds)

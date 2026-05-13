@@ -16,7 +16,6 @@ from sklearn.metrics import (
     roc_auc_score,
     roc_curve,
 )
-from sklearn.utils import check_random_state
 
 
 def normalize_id_columns(df: pd.DataFrame) -> pd.DataFrame:
@@ -37,9 +36,9 @@ def load_model(model_path: Path):
 
 
 def prepare_matrix(
-    interactions_df: pd.DataFrame,
-    drug_embeddings_df: pd.DataFrame,
-    protein_embeddings_df: pd.DataFrame,
+        interactions_df: pd.DataFrame,
+        drug_embeddings_df: pd.DataFrame,
+        protein_embeddings_df: pd.DataFrame,
 ) -> tuple[pd.DataFrame, np.ndarray, np.ndarray, list[str]]:
     interactions_df = normalize_id_columns(interactions_df)
     drug_embeddings_df = normalize_id_columns(drug_embeddings_df)
@@ -76,10 +75,10 @@ def get_positive_class_probabilities(clf, X: np.ndarray) -> np.ndarray:
 
 
 def compute_topk_enrichment(
-    df: pd.DataFrame,
-    score_col: str = "probability",
-    label_col: str = "label",
-    ks: list[int] | None = None,
+        df: pd.DataFrame,
+        score_col: str = "probability",
+        label_col: str = "label",
+        ks: list[int] | None = None,
 ) -> pd.DataFrame:
     if ks is None:
         ks = [10, 25, 50, 100, 250, 500, 1000]
@@ -91,27 +90,21 @@ def compute_topk_enrichment(
     ranked = df.sort_values(score_col, ascending=False).reset_index(drop=True)
 
     rows = []
-    cum_pos = 0
     for k in ks:
         k = min(k, total_n)
         topk = ranked.head(k)
         hits = int(topk[label_col].sum())
-        cum_pos = hits
         precision_at_k = hits / k if k else 0.0
         recall_at_k = hits / total_pos if total_pos else 0.0
-        enrichment_factor = (
-            (precision_at_k / base_rate) if base_rate > 0 else np.nan
-        )
-        rows.append(
-            {
-                "k": k,
-                "hits": hits,
-                "precision_at_k": precision_at_k,
-                "recall_at_k": recall_at_k,
-                "base_rate": base_rate,
-                "enrichment_factor": enrichment_factor,
-            }
-        )
+        enrichment_factor = (precision_at_k / base_rate) if base_rate > 0 else np.nan
+        rows.append({
+            "k": k,
+            "hits": hits,
+            "precision_at_k": precision_at_k,
+            "recall_at_k": recall_at_k,
+            "base_rate": base_rate,
+            "enrichment_factor": enrichment_factor,
+        })
     return pd.DataFrame(rows)
 
 
@@ -167,33 +160,42 @@ def plot_roc_pr_curves(df: pd.DataFrame, out_path: Path) -> dict:
 
 
 def main() -> None:
+    # Compute project root from this script's location
+    project_root = Path(__file__).resolve().parents[2]
+
     parser = argparse.ArgumentParser(
         description="Evaluate RF predictions on labeled interaction data."
     )
     parser.add_argument(
         "--interactions_csv",
         type=Path,
-        default=Path("data/raw/chembl_pd_interactions.csv"),
+        default=project_root / "data" / "raw" / "chembl_pd_interactions.csv",
     )
     parser.add_argument(
         "--drug_embeddings_csv",
         type=Path,
-        default=Path("data/processed/chembl_drug_embeddings.csv"),
+        default=project_root / "data" / "processed" / "chembl_drug_embeddings.csv",
     )
     parser.add_argument(
         "--protein_embeddings_csv",
         type=Path,
-        default=Path("data/processed/protein_embeddings.csv"),
+        default=project_root / "data" / "processed" / "protein_embeddings.csv",
     )
     parser.add_argument(
         "--model_path",
         type=Path,
-        default=Path("artifacts/rf_cv/rf_model.pkl"),
+        default=project_root / "artifacts" / "rf_cv" / "rf_model.pkl",
+    )
+    parser.add_argument(
+        "--metadata_path",
+        type=Path,
+        default=project_root / "artifacts" / "rf_cv" / "rf_metadata.json",
+        help="Path to metadata.json saved during training (contains feature_cols).",
     )
     parser.add_argument(
         "--out_dir",
         type=Path,
-        default=Path("../../artifacts/artifacts/rf_evaluation"),
+        default=project_root / "artifacts" / "rf_evaluation",
     )
     parser.add_argument(
         "--label_threshold",
@@ -204,8 +206,20 @@ def main() -> None:
     args = parser.parse_args()
     args.out_dir.mkdir(parents=True, exist_ok=True)
 
-    print("[1/5] Loading model...")
+    print(f"[info] Project root: {project_root}")
+    print(f"[info] Model path: {args.model_path}")
+
+    # Load metadata to get feature_cols (important for consistency)
+    print("[1/5] Loading model and metadata...")
     clf = load_model(args.model_path)
+
+    if args.metadata_path.exists():
+        metadata = json.loads(args.metadata_path.read_text(encoding="utf-8"))
+        feature_cols_from_metadata = metadata.get("feature_cols", None)
+        print(f"  Metadata loaded from: {args.metadata_path}")
+    else:
+        feature_cols_from_metadata = None
+        print(f"  [warn] Metadata not found at {args.metadata_path} — will infer feature_cols from data")
 
     print("[2/5] Loading data...")
     interactions = pd.read_csv(args.interactions_csv)
@@ -216,20 +230,29 @@ def main() -> None:
             raise ValueError(
                 "Interactions CSV must contain either 'label' or 'pchembl_value'."
             )
-        interactions["pchembl_value"] = pd.to_numeric(
-            interactions["pchembl_value"], errors="coerce"
-        )
-        interactions["label"] = (
-            interactions["pchembl_value"] >= args.label_threshold
-        ).astype(int)
+        interactions["pchembl_value"] = pd.to_numeric(interactions["pchembl_value"], errors="coerce")
+        interactions["label"] = (interactions["pchembl_value"] >= args.label_threshold).astype(int)
 
     drug_emb = pd.read_csv(args.drug_embeddings_csv)
     protein_emb = pd.read_csv(args.protein_embeddings_csv)
 
     print("[3/5] Building feature matrix...")
-    merged, X, y, feature_cols = prepare_matrix(interactions, drug_emb, protein_emb)
+    merged, X, y, feature_cols_from_data = prepare_matrix(interactions, drug_emb, protein_emb)
     print(f"  Rows after merge: {len(merged):,}")
-    print(f"  Features: {len(feature_cols)}")
+    print(f"  Features inferred from data: {len(feature_cols_from_data)}")
+
+    # Use feature_cols from metadata if available, else from data
+    if feature_cols_from_metadata:
+        if len(feature_cols_from_metadata) != X.shape[1]:
+            raise ValueError(
+                f"Mismatch: metadata has {len(feature_cols_from_metadata)} features, "
+                f"but data has {X.shape[1]}. Check that you're using the same embeddings as training."
+            )
+        feature_cols = feature_cols_from_metadata
+        print(f"  Using feature_cols from metadata")
+    else:
+        feature_cols = feature_cols_from_data
+        print(f"  Using feature_cols inferred from data")
 
     print("[4/5] Scoring predictions...")
     probs = get_positive_class_probabilities(clf, X)

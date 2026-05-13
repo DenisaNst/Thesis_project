@@ -1,0 +1,14 @@
+{
+  "total_predictions": 190816,
+  "unique_targets": 67,
+  "unique_drugs": 2848,
+  "known_pd_hits": 160,
+  "known_pd_list_size": 257,
+  "pairs_above_threshold": 365,
+  "novel_high_conf_excl_gr": 261,
+  "threshold_used": 0.9,
+  "memorisation_target_excluded": "Glucocorticoid receptor",
+  "mean_score": 0.532,
+  "top_target": "Peptidyl-prolyl cis-trans isomerase FKBP1A",
+  "top_target_pct": 1.5
+}
