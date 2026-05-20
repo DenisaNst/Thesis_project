@@ -1,0 +1,109 @@
+drug_id,drug_name,target_id,target_name,drkg_drug_key,drkg_target_key,drug_node_idx,target_node_idx,score,source
+DB06016,Cariprazine,CHEMBL234,D(3) dopamine receptor,Compound::DB06016,Gene::1816,4166,2075,0.9716673725777684,esm2_only
+DB04835,Maraviroc,CHEMBL2034,Glucocorticoid receptor,Compound::DB04835,Gene::2908,4760,293,0.950254774119354,esm2_only
+DB00796,Candesartan cilexetil,CHEMBL3535,"High affinity cGMP-specific 3',5'-cyclic phosphodiesterase 9A",Compound::DB00796,Gene::5152,3885,1843,0.9495668379970372,esm2_only
+DB00311,Ethoxzolamide,CHEMBL205,Carbonic anhydrase 2,Compound::DB00311,Gene::760,2964,1989,0.9437252365443008,esm2_only
+DB06016,Cariprazine,CHEMBL214,5-hydroxytryptamine receptor 1A,Compound::DB06016,Gene::3350,4166,2164,0.935512624339661,esm2_only
+DB00391,Sulpiride,CHEMBL205,Carbonic anhydrase 2,Compound::DB00391,Gene::760,29,1989,0.9345051713542826,esm2_only
+DB09143,Sonidegib,CHEMBL245,Muscarinic acetylcholine receptor M3,Compound::DB09143,Gene::1131,2176,1949,0.9335814962157531,esm2_only
+DB06448,Lonafarnib,CHEMBL2014,Nociceptin receptor,Compound::DB06448,Gene::4987,2012,1866,0.9335439739605788,esm2_only
+DB09195,Lorpiprazole,CHEMBL234,D(3) dopamine receptor,Compound::DB09195,Gene::1816,5125,2075,0.9320727543478384,esm2_only
+DB11574,Elbasvir,CHEMBL205,Carbonic anhydrase 2,Compound::DB11574,Gene::760,3862,1989,0.9303811426775794,esm2_only
+DB15328,Ubrogepant,CHEMBL234,D(3) dopamine receptor,Compound::DB15328,Gene::1816,10560,2075,0.9296578458078402,esm2_only
+DB11611,Lifitegrast,CHEMBL205,Carbonic anhydrase 2,Compound::DB11611,Gene::760,5053,1989,0.9283588220399458,esm2_only
+DB09195,Lorpiprazole,CHEMBL2014,Nociceptin receptor,Compound::DB09195,Gene::4987,5125,1866,0.9282869850919812,esm2_only
+DB01200,Bromocriptine,CHEMBL2034,Glucocorticoid receptor,Compound::DB01200,Gene::2908,5229,293,0.928167843543853,esm2_only
+DB06448,Lonafarnib,CHEMBL234,D(3) dopamine receptor,Compound::DB06448,Gene::1816,2012,2075,0.9254080584617516,esm2_only
+DB15035,Zanubrutinib,CHEMBL2014,Nociceptin receptor,Compound::DB15035,Gene::4987,3668,1866,0.9248092127308573,esm2_only
+DB15444,Elexacaftor,CHEMBL2034,Glucocorticoid receptor,Compound::DB15444,Gene::2908,11355,293,0.9246091139257568,esm2_only
+DB04835,Maraviroc,CHEMBL234,D(3) dopamine receptor,Compound::DB04835,Gene::1816,4760,2075,0.9242507683557162,esm2_only
+DB00433,Prochlorperazine,CHEMBL2014,Nociceptin receptor,Compound::DB00433,Gene::4987,4928,1866,0.923927639432712,esm2_only
+DB00251,Terconazole,CHEMBL2034,Glucocorticoid receptor,Compound::DB00251,Gene::2908,1862,293,0.9233786654266172,esm2_only
+DB05381,Histamine,CHEMBL264,Histamine H3 receptor,Compound::DB05381,Gene::57538,1593,24087,0.922021940400974,esm2_only
+DB05294,Vandetanib,CHEMBL264,Histamine H3 receptor,Compound::DB05294,Gene::57538,236,24087,0.9208330508976902,esm2_only
+DB08897,Aclidinium,CHEMBL2014,Nociceptin receptor,Compound::DB08897,Gene::4987,4174,1866,0.9203572234493748,esm2_only
+DB05667,Levoketoconazole,CHEMBL2034,Glucocorticoid receptor,Compound::DB05667,Gene::2908,986,293,0.9192232552779904,esm2_only
+DB08897,Aclidinium,CHEMBL264,Histamine H3 receptor,Compound::DB08897,Gene::57538,4174,24087,0.9178346698794694,esm2_only
+DB01232,Saquinavir,CHEMBL2014,Nociceptin receptor,Compound::DB01232,Gene::4987,373,1866,0.91725303020756,esm2_only
+DB12015,Alpelisib,CHEMBL2034,Glucocorticoid receptor,Compound::DB12015,Gene::2908,5202,293,0.9164512656035028,esm2_only
+DB00183,Pentagastrin,CHEMBL205,Carbonic anhydrase 2,Compound::DB00183,Gene::760,4309,1989,0.916409728232964,esm2_only
+DB11363,Alectinib,CHEMBL3535,"High affinity cGMP-specific 3',5'-cyclic phosphodiesterase 9A",Compound::DB11363,Gene::5152,3681,1843,0.916162774883037,esm2_only
+DB00796,Candesartan cilexetil,CHEMBL205,Carbonic anhydrase 2,Compound::DB00796,Gene::760,3885,1989,0.9155541676511284,esm2_only
+DB11718,Encorafenib,CHEMBL3535,"High affinity cGMP-specific 3',5'-cyclic phosphodiesterase 9A",Compound::DB11718,Gene::5152,4058,1843,0.9145961681799024,esm2_only
+DB06274,Alvimopan,CHEMBL2034,Glucocorticoid receptor,Compound::DB06274,Gene::2908,3241,293,0.9140035837171931,esm2_only
+DB09195,Lorpiprazole,CHEMBL2034,Glucocorticoid receptor,Compound::DB09195,Gene::2908,5125,293,0.9137602647217912,esm2_only
+DB06684,Vilazodone,CHEMBL228,Sodium-dependent serotonin transporter,Compound::DB06684,Gene::6532,4562,603,0.913107529584744,esm2_only
+DB00204,Dofetilide,CHEMBL205,Carbonic anhydrase 2,Compound::DB00204,Gene::760,5502,1989,0.9127748372835904,esm2_only
+DB06636,Isavuconazonium,CHEMBL3535,"High affinity cGMP-specific 3',5'-cyclic phosphodiesterase 9A",Compound::DB06636,Gene::5152,11821,1843,0.9121904395798016,esm2_only
+DB01409,Tiotropium,CHEMBL2034,Glucocorticoid receptor,Compound::DB01409,Gene::2908,3281,293,0.91216270184017,esm2_only
+DB01232,Saquinavir,CHEMBL205,Carbonic anhydrase 2,Compound::DB01232,Gene::760,373,1989,0.9120798033660354,esm2_only
+DB12941,Darolutamide,CHEMBL3535,"High affinity cGMP-specific 3',5'-cyclic phosphodiesterase 9A",Compound::DB12941,Gene::5152,11836,1843,0.9118780230032112,esm2_only
+DB12457,Rimegepant,CHEMBL234,D(3) dopamine receptor,Compound::DB12457,Gene::1816,5350,2075,0.9116475088444372,esm2_only
+DB05667,Levoketoconazole,CHEMBL234,D(3) dopamine receptor,Compound::DB05667,Gene::1816,986,2075,0.911482809937498,esm2_only
+DB00850,Perphenazine,CHEMBL2014,Nociceptin receptor,Compound::DB00850,Gene::4987,2901,1866,0.9111829267115276,esm2_only
+DB00490,Buspirone,CHEMBL234,D(3) dopamine receptor,Compound::DB00490,Gene::1816,1321,2075,0.9104749829326276,esm2_only
+DB09143,Sonidegib,CHEMBL234,D(3) dopamine receptor,Compound::DB09143,Gene::1816,2176,2075,0.9104604100540804,esm2_only
+DB11995,Avatrombopag,CHEMBL3535,"High affinity cGMP-specific 3',5'-cyclic phosphodiesterase 9A",Compound::DB11995,Gene::5152,9115,1843,0.9100747520579252,esm2_only
+DB01167,Itraconazole,CHEMBL2014,Nociceptin receptor,Compound::DB01167,Gene::4987,6227,1866,0.9099517259320232,esm2_only
+DB01032,Probenecid,CHEMBL205,Carbonic anhydrase 2,Compound::DB01032,Gene::760,3071,1989,0.9098452848386116,esm2_only
+DB06267,Udenafil,CHEMBL205,Carbonic anhydrase 2,Compound::DB06267,Gene::760,9113,1989,0.909804389514684,esm2_only
+DB15442,Trilaciclib,CHEMBL1908389,Mitogen-activated protein kinase kinase kinase 12,Compound::DB15442,Gene::7786,3003,3956,0.9097545920248624,esm2_only
+DB01324,Polythiazide,CHEMBL205,Carbonic anhydrase 2,Compound::DB01324,Gene::760,7784,1989,0.9096481141151636,esm2_only
+DB11979,Elagolix,CHEMBL2034,Glucocorticoid receptor,Compound::DB11979,Gene::2908,1375,293,0.909434035356956,esm2_only
+DB14083,Bisphenol A diglycidyl ether,CHEMBL264,Histamine H3 receptor,Compound::DB14083,Gene::57538,16309,24087,0.9094067139311118,esm2_only
+DB14723,Larotrectinib,CHEMBL234,D(3) dopamine receptor,Compound::DB14723,Gene::1816,937,2075,0.9094046516934284,esm2_only
+DB12612,Ozanimod,CHEMBL214,5-hydroxytryptamine receptor 1A,Compound::DB12612,Gene::3350,4216,2164,0.9093707770066278,esm2_only
+DB00796,Candesartan cilexetil,CHEMBL1908389,Mitogen-activated protein kinase kinase kinase 12,Compound::DB00796,Gene::7786,3885,3956,0.909224776904224,esm2_only
+DB11799,Bictegravir,CHEMBL1908389,Mitogen-activated protein kinase kinase kinase 12,Compound::DB11799,Gene::7786,427,3956,0.9091239618832396,esm2_only
+DB00591,Fluocinolone acetonide,CHEMBL2034,Glucocorticoid receptor,Compound::DB00591,Gene::2908,2825,293,0.9089008406997025,esm2_only
+DB11742,Ebastine,CHEMBL234,D(3) dopamine receptor,Compound::DB11742,Gene::1816,11357,2075,0.908857078114286,esm2_only
+DB00224,Indinavir,CHEMBL2034,Glucocorticoid receptor,Compound::DB00224,Gene::2908,8182,293,0.908679614206203,esm2_only
+DB08816,Ticagrelor,CHEMBL264,Histamine H3 receptor,Compound::DB08816,Gene::57538,5640,24087,0.908483078346449,esm2_only
+DB00496,Darifenacin,CHEMBL264,Histamine H3 receptor,Compound::DB00496,Gene::57538,1819,24087,0.908293028750356,esm2_only
+DB14895,Vibegron,CHEMBL264,Histamine H3 receptor,Compound::DB14895,Gene::57538,8721,24087,0.9079475910657554,esm2_only
+DB08878,Aminopterin,CHEMBL205,Carbonic anhydrase 2,Compound::DB08878,Gene::760,8145,1989,0.9077875062079326,esm2_only
+DB04835,Maraviroc,CHEMBL3535,"High affinity cGMP-specific 3',5'-cyclic phosphodiesterase 9A",Compound::DB04835,Gene::5152,4760,1843,0.907413694346345,esm2_only
+DB06016,Cariprazine,CHEMBL1908389,Mitogen-activated protein kinase kinase kinase 12,Compound::DB06016,Gene::7786,4166,3956,0.9074126101889622,esm2_only
+DB01196,Estramustine,CHEMBL2034,Glucocorticoid receptor,Compound::DB01196,Gene::2908,3494,293,0.9070758696894096,esm2_only
+DB14002,D-alpha-Tocopherol acetate,CHEMBL2034,Glucocorticoid receptor,Compound::DB14002,Gene::2908,1617,293,0.9070310704081348,esm2_only
+DB00762,Irinotecan,CHEMBL1908389,Mitogen-activated protein kinase kinase kinase 12,Compound::DB00762,Gene::7786,2675,3956,0.9068197785026636,esm2_only
+DB01106,Levocabastine,CHEMBL2014,Nociceptin receptor,Compound::DB01106,Gene::4987,5907,1866,0.9067886165090672,esm2_only
+DB13954,Estradiol cypionate,CHEMBL2034,Glucocorticoid receptor,Compound::DB13954,Gene::2908,4241,293,0.9067505622567196,esm2_only
+DB15569,Sotorasib,CHEMBL205,Carbonic anhydrase 2,Compound::DB15569,Gene::760,14956,1989,0.9067399234705676,esm2_only
+DB06077,Lumateperone,CHEMBL1908389,Mitogen-activated protein kinase kinase kinase 12,Compound::DB06077,Gene::7786,1119,3956,0.9061916351353312,esm2_only
+DB06274,Alvimopan,CHEMBL205,Carbonic anhydrase 2,Compound::DB06274,Gene::760,3241,1989,0.9057825049563476,esm2_only
+DB12597,Asciminib,CHEMBL2034,Glucocorticoid receptor,Compound::DB12597,Gene::2908,2416,293,0.9057162665524988,esm2_only
+DB14895,Vibegron,CHEMBL2014,Nociceptin receptor,Compound::DB14895,Gene::4987,8721,1866,0.9053116137076446,esm2_only
+DB06155,Rimonabant,CHEMBL2014,Nociceptin receptor,Compound::DB06155,Gene::4987,1887,1866,0.9053024817642904,esm2_only
+DB15568,Adagrasib,CHEMBL214,5-hydroxytryptamine receptor 1A,Compound::DB15568,Gene::3350,14955,2164,0.9052497133889424,esm2_only
+DB00775,Tirofiban,CHEMBL205,Carbonic anhydrase 2,Compound::DB00775,Gene::760,5233,1989,0.9052171251296918,esm2_only
+DB00157,NADH,CHEMBL2034,Glucocorticoid receptor,Compound::DB00157,Gene::2908,4906,293,0.9051070878240324,esm2_only
+DB14860,Ensartinib,CHEMBL2034,Glucocorticoid receptor,Compound::DB14860,Gene::2908,4843,293,0.9049234710927344,esm2_only
+DB08912,Dabrafenib,CHEMBL205,Carbonic anhydrase 2,Compound::DB08912,Gene::760,4141,1989,0.9046089889559396,esm2_only
+DB01232,Saquinavir,CHEMBL264,Histamine H3 receptor,Compound::DB01232,Gene::57538,373,24087,0.9043931422720882,esm2_only
+DB06448,Lonafarnib,CHEMBL2034,Glucocorticoid receptor,Compound::DB06448,Gene::2908,2012,293,0.9043864378284354,esm2_only
+DB00932,Tipranavir,CHEMBL2034,Glucocorticoid receptor,Compound::DB00932,Gene::2908,451,293,0.904326323003162,esm2_only
+DB13520,Metergoline,CHEMBL214,5-hydroxytryptamine receptor 1A,Compound::DB13520,Gene::3350,4579,2164,0.9042865163689944,esm2_only
+DB09048,Netupitant,CHEMBL3535,"High affinity cGMP-specific 3',5'-cyclic phosphodiesterase 9A",Compound::DB09048,Gene::5152,5244,1843,0.904267473504394,esm2_only
+DB09164,Technetium Tc-99m disofenin,CHEMBL205,Carbonic anhydrase 2,Compound::DB09164,Gene::760,11523,1989,0.9042007122656064,esm2_only
+DB05294,Vandetanib,CHEMBL2014,Nociceptin receptor,Compound::DB05294,Gene::4987,236,1866,0.904055773723041,esm2_only
+DB00872,Conivaptan,CHEMBL3535,"High affinity cGMP-specific 3',5'-cyclic phosphodiesterase 9A",Compound::DB00872,Gene::5152,1011,1843,0.9038315016184544,esm2_only
+DB04931,Afamelanotide,CHEMBL2014,Nociceptin receptor,Compound::DB04931,Gene::4987,13937,1866,0.903580915413162,esm2_only
+DB00220,Nelfinavir,CHEMBL264,Histamine H3 receptor,Compound::DB00220,Gene::57538,262,24087,0.9034649156269616,esm2_only
+DB00385,Valrubicin,CHEMBL2034,Glucocorticoid receptor,Compound::DB00385,Gene::2908,1610,293,0.9029561752836324,esm2_only
+DB08911,Trametinib,CHEMBL205,Carbonic anhydrase 2,Compound::DB08911,Gene::760,6363,1989,0.9027723299996248,esm2_only
+DB05271,Rotigotine,CHEMBL264,Histamine H3 receptor,Compound::DB05271,Gene::57538,2921,24087,0.9027438876904272,esm2_only
+DB09063,Ceritinib,CHEMBL3535,"High affinity cGMP-specific 3',5'-cyclic phosphodiesterase 9A",Compound::DB09063,Gene::5152,5957,1843,0.902628757234969,esm2_only
+DB12457,Rimegepant,CHEMBL205,Carbonic anhydrase 2,Compound::DB12457,Gene::760,5350,1989,0.9021024622209208,esm2_only
+DB00699,Nicergoline,CHEMBL214,5-hydroxytryptamine receptor 1A,Compound::DB00699,Gene::3350,3967,2164,0.9020943117537816,esm2_only
+DB11712,Tezacaftor,CHEMBL2063,Ceramide glucosyltransferase,Compound::DB11712,Gene::7357,10091,1065,0.901957568445218,esm2_only
+DB12015,Alpelisib,CHEMBL4794,Transient receptor potential cation channel subfamily V member 1,Compound::DB12015,Gene::7442,5202,2239,0.9019553605480252,esm2_only
+DB00157,NADH,CHEMBL205,Carbonic anhydrase 2,Compound::DB00157,Gene::760,4906,1989,0.9018292095960648,esm2_only
+DB15490,Zuranolone,CHEMBL2034,Glucocorticoid receptor,Compound::DB15490,Gene::2908,5110,293,0.9018190749942194,esm2_only
+DB08816,Ticagrelor,CHEMBL214,5-hydroxytryptamine receptor 1A,Compound::DB08816,Gene::3350,5640,2164,0.9013628483096668,esm2_only
+DB11742,Ebastine,CHEMBL264,Histamine H3 receptor,Compound::DB11742,Gene::57538,11357,24087,0.9011663770437146,esm2_only
+DB12267,Brigatinib,CHEMBL3535,"High affinity cGMP-specific 3',5'-cyclic phosphodiesterase 9A",Compound::DB12267,Gene::5152,4326,1843,0.9011133731339964,esm2_only
+DB00634,Sulfacetamide,CHEMBL205,Carbonic anhydrase 2,Compound::DB00634,Gene::760,10317,1989,0.9008471020865588,esm2_only
+DB08834,Tauroursodeoxycholic acid,CHEMBL2034,Glucocorticoid receptor,Compound::DB08834,Gene::2908,1491,293,0.900660207677454,esm2_only
+DB06595,Midostaurin,CHEMBL214,5-hydroxytryptamine receptor 1A,Compound::DB06595,Gene::3350,5294,2164,0.9006579122112227,esm2_only
+DB02925,Piretanide,CHEMBL205,Carbonic anhydrase 2,Compound::DB02925,Gene::760,2186,1989,0.9003191443186142,esm2_only

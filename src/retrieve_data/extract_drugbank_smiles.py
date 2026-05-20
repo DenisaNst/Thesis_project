@@ -5,14 +5,9 @@ from tqdm import tqdm
 from pathlib import Path
 
 def parse_drugbank(xml_path, output_path):
-    print(f"Parsing {xml_path}...")
-    
-    # DrugBank uses a namespace
     ns = {'db': 'http://www.drugbank.ca'}
-    
     drugs = []
-    
-    # We use iterparse to handle the large XML file
+
     context = ET.iterparse(xml_path, events=('end',))
     
     for event, elem in tqdm(context, desc="Processing drugs"):
@@ -24,7 +19,6 @@ def parse_drugbank(xml_path, output_path):
                 drug_dbid = elem.findtext('db:drugbank-id[@primary="true"]', namespaces=ns)
                 name = elem.findtext('db:name', namespaces=ns)
                 
-                # Extract SMILES
                 smiles = None
                 properties = elem.findall('db:calculated-properties/db:property', ns)
                 for prop in properties:
@@ -32,21 +26,13 @@ def parse_drugbank(xml_path, output_path):
                     if kind == 'SMILES':
                         smiles = prop.findtext('db:value', namespaces=ns)
                         break
-                
                 if smiles:
                     drugs.append({
                         'drugbank_id': drug_dbid,
                         'name': name,
                         'smiles': smiles
                     })
-            
-            # Clear element to save memory
             elem.clear()
-            
-    # Ensure output directory exists
-    output_dir = os.path.dirname(output_path)
-    if not os.path.exists(output_dir):
-        os.makedirs(output_dir)
         
     df = pd.DataFrame(drugs)
     df.to_csv(output_path, index=False)

@@ -1,308 +1,413 @@
 """
-gnn_saliency.py
-----------------
-Gradient-based saliency and subgraph extraction for PDHeteroGNN.
+saliency_maps.py
+-----------------
+Generates saliency maps for RF top drug repositioning candidates
+using the trained PDHeteroGNN model on the DRKG knowledge graph.
 
-WHY THE ORIGINAL compute_gnn_saliency WAS BROKEN
--------------------------------------------------
-Bug 1 — Wrong API:
-    Called model(x, edge_index, batch=batch).
-    PDHeteroGNN has no forward() method — only encode() and score_pairs().
+Purpose:
+  The RF identified high-confidence FDA drug → PD target candidates
+  using molecular embeddings. The GNN explains WHY those predictions
+  make sense from a biological graph structure perspective.
 
-Bug 2 — Wrong input types:
-    Passed a flat tensor x and a single edge_index.
-    PDHeteroGNN expects dicts: x_dict and edge_index_dict.
+  For each candidate (drug, target):
+    → gradient of GNN score w.r.t. input node features
+    → identifies which DRKG nodes most influenced the prediction
+    → produces an explanatory subgraph: genes, pathways, diseases
+      that biologically connect the drug to the target
 
-Bug 3 — Spurious batch argument:
-    PDHeteroGNN never accepts batch — PyG handles it via HeteroData.
+Connection to RF:
+  RF candidates come from saliency_candidates_both.csv
+  (pairs where BOTH ESM2 and DRKG RF models gave score >= 0.9)
+  These are the highest-confidence repositioning predictions.
+  Saliency maps provide the biological narrative for each.
 
-Functions
----------
-compute_hetero_gnn_saliency     — node-level gradient saliency (fixed)
-compute_hetero_edge_saliency    — edge-level saliency via endpoint proxy
-extract_explanatory_subgraph    — filters graph to salient nodes + edges
-visualize_explanatory_subgraph  — NetworkX plot coloured by saliency
+Usage:
+    python src/gnn_final/saliency_maps.py
+    python src/gnn_final/saliency_maps.py --top_k 10 --top_candidates 20
 """
 
 from __future__ import annotations
+import sys
+import json
+import argparse
+from pathlib import Path
 
-from typing import Optional
 import numpy as np
+import pandas as pd
+import torch
+import torch.nn.functional as F
+import matplotlib
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt
 
-try:
-    import torch
-except ImportError:
-    torch = None  # type: ignore
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(PROJECT_ROOT / "src"))
 
-try:
-    from torch_geometric.data import HeteroData
-except ImportError:
-    HeteroData = None  # type: ignore
+from gnn_final.build_drkg3 import build_pd_drkg_graph, PRED_SRC, PRED_DST
+from gnn_final.GNN_pd import PDHeteroGNN
+
+# Paths
+MODEL_DIR    = PROJECT_ROOT / "artifacts" / "gnn_v2"
+CAND_CSV     = MODEL_DIR / "saliency_candidates_both.csv"
+OUT_DIR      = MODEL_DIR / "saliency_maps"
 
 
-def compute_hetero_gnn_saliency(
-    model,
-    data: "HeteroData",
-    drug_idx: int,
-    target_idx: int,
-) -> dict[str, np.ndarray]:
+# ---------------------------------------------------------------------------
+# Core saliency computation
+# ---------------------------------------------------------------------------
+
+def compute_saliency(model: PDHeteroGNN,
+                     data,
+                     drug_idx: int,
+                     target_idx: int,
+                     device: torch.device) -> dict[str, np.ndarray]:
     """
-    Gradient-based node saliency for PDHeteroGNN.
+    Compute input gradient saliency for a single drug-target pair.
 
-    Enables gradients on all node feature tensors, runs a forward pass
-    through encode() + score_pairs(), back-propagates the prediction logit,
-    and returns the absolute gradient magnitude (summed over features)
-    as a saliency score per node — normalised to [0, 1] per node type.
-
-    Parameters
-    ----------
-    model      : PDHeteroGNN in eval mode
-    data       : HeteroData with x_dict and edge_index_dict populated
-    drug_idx   : integer index of the drug node to explain
-    target_idx : integer index of the target node to explain
+    How it works:
+      1. Enable requires_grad on input node features (x_dict)
+         — this is where gradients must flow INTO, not the output
+      2. Forward pass: x_dict → GNN encoder → z_dict (node embeddings)
+      3. Score = dot product of drug and target embeddings
+      4. Backpropagate score through the GNN
+      5. Gradient magnitude at each node's input features
+         = how much that node's features influenced the prediction
+      6. Aggregate across embedding dimensions → one importance score
+         per node
 
     Returns
     -------
-    dict of {node_type: np.ndarray of shape (num_nodes,)}
+    saliency : dict {ntype: np.ndarray of shape (n_nodes,)}
+        Importance score for every node in the graph.
+        Higher = more influential for this prediction.
     """
-    if torch is None:
-        raise ImportError("PyTorch is required for GNN saliency.")
-
     model.eval()
 
-    x_dict_grad = {
-        ntype: data[ntype].x.clone().detach().requires_grad_(True)
-        for ntype in data.node_types
-    }
+    # Step 1: enable gradients on input features
+    # Create new tensors with requires_grad=True so gradients flow back
+    x_dict_grad = {}
+    for ntype, x in data.x_dict.items():
+        x_grad = x.detach().clone().requires_grad_(True)
+        x_dict_grad[ntype] = x_grad
 
+    # Step 2: forward pass with gradient-enabled inputs
     z_dict = model.encode(x_dict_grad, data.edge_index_dict)
 
-    edge_label_index = torch.tensor(
-        [[drug_idx], [target_idx]],
-        dtype=torch.long,
-        device=z_dict["drug"].device,
-    )
-    score = model.score_pairs(z_dict, edge_label_index)
+    # Step 3: score the specific drug-target pair
+    src_idx = torch.tensor([drug_idx],   dtype=torch.long, device=device)
+    dst_idx = torch.tensor([target_idx], dtype=torch.long, device=device)
+    edge_idx = torch.stack([src_idx, dst_idx])
+
+    score = model.score_pairs(z_dict, edge_idx, PRED_SRC, PRED_DST)
+
+    # Step 4: backpropagate
     score.backward()
 
-    saliency: dict[str, np.ndarray] = {}
-    for ntype, x_t in x_dict_grad.items():
-        if x_t.grad is not None:
-            sal = x_t.grad.abs().sum(dim=1).detach().cpu().numpy()
+    # Step 5: collect gradient magnitudes per node type
+    saliency = {}
+    for ntype, x_grad in x_dict_grad.items():
+        if x_grad.grad is not None:
+            # Mean absolute gradient across embedding dimensions
+            # Shape: (n_nodes,) — one importance score per node
+            saliency[ntype] = x_grad.grad.abs().mean(dim=1)\
+                .detach().cpu().numpy()
         else:
-            sal = np.zeros(x_t.size(0), dtype=np.float32)
-
-        max_val = sal.max()
-        saliency[ntype] = sal / (max_val + 1e-8) if max_val > 0 else sal
+            saliency[ntype] = np.zeros(x_grad.shape[0])
 
     return saliency
 
 
-def compute_hetero_edge_saliency(
-    model,
-    data: "HeteroData",
-    drug_idx: int,
-    target_idx: int,
-    edge_type: tuple[str, str, str] = ("drug", "binds_to", "target"),
-) -> np.ndarray:
+def get_top_nodes(saliency: dict[str, np.ndarray],
+                  idx_to_node: dict[str, dict[int, str]],
+                  drug_idx: int,
+                  target_idx: int,
+                  top_k: int = 10,
+                  exclude_self: bool = True) -> list[dict]:
     """
-    Edge-level saliency via endpoint node proxy.
-
-    Scores each edge as the mean saliency of its two endpoint nodes.
-    Useful for highlighting which drug-target edges drive a prediction.
-
-    Returns
-    -------
-    np.ndarray of shape (num_edges,) with values in [0, 1]
-    """
-    node_saliency = compute_hetero_gnn_saliency(model, data, drug_idx, target_idx)
-
-    src_type, _, dst_type = edge_type
-    edge_index = data[edge_type].edge_index
-
-    src_sal = node_saliency.get(src_type, np.zeros(data[src_type].x.size(0)))
-    dst_sal = node_saliency.get(dst_type, np.zeros(data[dst_type].x.size(0)))
-
-    src_scores = src_sal[edge_index[0].cpu().numpy()]
-    dst_scores = dst_sal[edge_index[1].cpu().numpy()]
-
-    edge_sal = (src_scores + dst_scores) / 2.0
-    max_val = edge_sal.max()
-    return edge_sal / (max_val + 1e-8) if max_val > 0 else edge_sal
-
-
-def extract_explanatory_subgraph(
-    data: "HeteroData",
-    saliency_dict: dict[str, np.ndarray],
-    drug_idx: int,
-    target_idx: int,
-    saliency_threshold: float = 0.3,
-    top_k_nodes: int = 10,
-) -> dict:
-    """
-    Extracts the explanatory subgraph for a (drug, target) prediction.
-
-    The anchor pair is always kept. For all other nodes, only those above
-    saliency_threshold are retained, capped at top_k_nodes per type.
-    Only edges connecting retained nodes are included.
-
-    Returns
-    -------
-    dict with keys:
-      "nodes"  -> {node_type: list of (node_idx, saliency_score)}
-      "edges"  -> {edge_type_str: list of (src_idx, dst_idx)}
-      "anchor" -> {"drug": drug_idx, "target": target_idx}
-    """
-    retained_nodes: dict[str, list[tuple[int, float]]] = {}
-
-    for ntype, sal in saliency_dict.items():
-        sorted_idx = np.argsort(sal)[::-1]
-
-        if ntype == "drug":
-            others = [
-                (int(i), float(sal[i]))
-                for i in sorted_idx
-                if sal[i] >= saliency_threshold and i != drug_idx
-            ][:top_k_nodes]
-            retained_nodes["drug"] = [(drug_idx, float(sal[drug_idx]))] + others
-
-        elif ntype == "target":
-            others = [
-                (int(i), float(sal[i]))
-                for i in sorted_idx
-                if sal[i] >= saliency_threshold and i != target_idx
-            ][:top_k_nodes]
-            retained_nodes["target"] = [(target_idx, float(sal[target_idx]))] + others
-
-        else:
-            above = [
-                (int(i), float(sal[i]))
-                for i in sorted_idx
-                if sal[i] >= saliency_threshold
-            ][:top_k_nodes]
-            if above:
-                retained_nodes[ntype] = above
-
-    retained_sets = {
-        ntype: {idx for idx, _ in pairs}
-        for ntype, pairs in retained_nodes.items()
-    }
-
-    retained_edges: dict[str, list[tuple[int, int]]] = {}
-    for edge_type in data.edge_types:
-        src_type, rel, dst_type = edge_type
-        src_set = retained_sets.get(src_type, set())
-        dst_set = retained_sets.get(dst_type, set())
-
-        if not src_set or not dst_set:
-            continue
-
-        edge_index = data[edge_type].edge_index.cpu().numpy()
-        mask = (
-            np.isin(edge_index[0], list(src_set)) &
-            np.isin(edge_index[1], list(dst_set))
-        )
-        if mask.any():
-            edge_key = f"{src_type}__{rel}__{dst_type}"
-            retained_edges[edge_key] = list(
-                zip(edge_index[0][mask].tolist(), edge_index[1][mask].tolist())
-            )
-
-    return {
-        "nodes": retained_nodes,
-        "edges": retained_edges,
-        "anchor": {"drug": drug_idx, "target": target_idx},
-    }
-
-
-def visualize_explanatory_subgraph(
-    subgraph: dict,
-    node_id_map: Optional[dict[str, dict[int, str]]] = None,
-    title: str = "Explanatory Subgraph",
-    output_path: Optional[str] = None,
-):
-    """
-    Draws the explanatory subgraph coloured by node type and saliency score.
+    Extract the top-K most important nodes from saliency scores.
 
     Parameters
     ----------
-    subgraph     : output of extract_explanatory_subgraph
-    node_id_map  : optional {node_type: {int_index: human_readable_name}}
-                   e.g. {"drug": {0: "Levodopa"}, "target": {0: "LRRK2"}}
-    title        : plot title
-    output_path  : saves to this path if given, otherwise calls plt.show()
+    exclude_self : bool
+        If True, exclude the drug and target nodes themselves —
+        they are always important by definition and dominate the ranking.
+        Set False to include them for completeness.
+
+    Returns
+    -------
+    List of dicts: {ntype, node_idx, entity_name, importance}
+    Sorted by importance descending.
     """
-    try:
-        import networkx as nx
-        import matplotlib.pyplot as plt
-    except ImportError:
-        raise ImportError("networkx and matplotlib are required for visualization.")
+    all_nodes = []
 
-    TYPE_COLORS = {
-        "drug": "#3B82F6",
-        "target": "#10B981",
-        "phenotype": "#F59E0B",
-    }
+    for ntype, scores in saliency.items():
+        for node_idx, importance in enumerate(scores):
+            # Optionally skip the query drug and target themselves
+            if exclude_self:
+                if ntype == PRED_SRC and node_idx == drug_idx:
+                    continue
+                if ntype == PRED_DST and node_idx == target_idx:
+                    continue
 
-    def _label(ntype: str, idx: int) -> str:
-        if node_id_map and ntype in node_id_map:
-            return node_id_map[ntype].get(idx, f"{ntype}_{idx}")
-        return f"{ntype}_{idx}"
+            entity_name = idx_to_node.get(ntype, {}).get(
+                node_idx, f"{ntype}_node_{node_idx}")
+            all_nodes.append({
+                "ntype":       ntype,
+                "node_idx":    node_idx,
+                "entity_name": entity_name,
+                "importance":  float(importance),
+            })
 
-    G = nx.DiGraph()
+    all_nodes.sort(key=lambda x: x["importance"], reverse=True)
+    return all_nodes[:top_k]
 
-    for ntype, pairs in subgraph["nodes"].items():
-        for idx, sal in pairs:
-            is_anchor = (
-                (ntype == "drug"   and idx == subgraph["anchor"]["drug"]) or
-                (ntype == "target" and idx == subgraph["anchor"]["target"])
-            )
-            G.add_node(_label(ntype, idx), node_type=ntype, saliency=sal, is_anchor=is_anchor)
 
-    for edge_key, edge_list in subgraph["edges"].items():
-        parts = edge_key.split("__")
-        src_type, dst_type = parts[0], parts[2]
-        for src_idx, dst_idx in edge_list:
-            src_name = _label(src_type, src_idx)
-            dst_name = _label(dst_type, dst_idx)
-            if G.has_node(src_name) and G.has_node(dst_name):
-                G.add_edge(src_name, dst_name)
+# ---------------------------------------------------------------------------
+# Visualisation
+# ---------------------------------------------------------------------------
 
-    if not G.nodes:
-        print("[warn] No nodes to visualize.")
+def plot_saliency(top_nodes: list[dict],
+                  drug_name: str,
+                  target_name: str,
+                  rf_score: float,
+                  output_path: Path) -> None:
+    """
+    Bar chart of top-K influential DRKG nodes for one drug-target pair.
+    """
+    if not top_nodes:
         return
 
-    fig, ax = plt.subplots(figsize=(12, 8))
-    ax.set_facecolor("#F8FAFC")
-    fig.patch.set_facecolor("#F8FAFC")
-    pos = nx.spring_layout(G, seed=42, k=2.5)
+    labels = []
+    for n in top_nodes:
+        # Shorten entity names for display
+        name = n["entity_name"]
+        # Strip DRKG prefix noise
+        for prefix in ["Gene::9606::", "Compound::DrugBank::",
+                        "Compound::CHEMBL::", "Disease::MESH:",
+                        "Biological_Process::", "Molecular_Function::",
+                        "Pathway::"]:
+            name = name.replace(prefix, "")
+        # Truncate long names
+        label = f"[{n['ntype'][:3].upper()}] {name[:40]}"
+        labels.append(label)
 
-    for ntype, color in TYPE_COLORS.items():
-        nodes = [n for n in G.nodes if G.nodes[n].get("node_type") == ntype]
-        if not nodes:
-            continue
-        sizes = [1800 if G.nodes[n]["is_anchor"] else 400 + 800 * G.nodes[n]["saliency"] for n in nodes]
-        borders = [3 if G.nodes[n]["is_anchor"] else 1 for n in nodes]
-        nx.draw_networkx_nodes(G, pos, nodelist=nodes, node_color=color,
-                               node_size=sizes, edgecolors="black",
-                               linewidths=borders, alpha=0.9, ax=ax, label=ntype)
+    values = [n["importance"] for n in top_nodes]
 
-    nx.draw_networkx_edges(G, pos, edge_color="#94A3B8", arrows=True,
-                           arrowstyle="-|>", arrowsize=15, width=1.5, alpha=0.7, ax=ax)
-    nx.draw_networkx_labels(G, pos, font_size=8, ax=ax)
+    # Color by node type
+    color_map = {
+        "Compound":           "#4C72B0",
+        "Gene":               "#DD8452",
+        "Disease":            "#55A868",
+        "Biological_Process": "#C44E52",
+        "Molecular_Function": "#8172B2",
+        "Pathway":            "#937860",
+    }
+    colors = [color_map.get(n["ntype"], "#777777") for n in top_nodes]
 
-    ax.set_title(title, fontsize=14, fontweight="bold", pad=15)
-    ax.legend(scatterpoints=1, loc="upper left", fontsize=9)
-    ax.axis("off")
-
-    sm = plt.cm.ScalarMappable(cmap="Blues", norm=plt.Normalize(vmin=0, vmax=1))
-    sm.set_array([])
-    plt.colorbar(sm, ax=ax, label="Saliency Score", fraction=0.03, pad=0.04)
-
+    fig, ax = plt.subplots(figsize=(10, max(4, len(labels) * 0.45)))
+    bars = ax.barh(labels[::-1], values[::-1], color=colors[::-1])
+    ax.set_xlabel("Mean |Gradient| (importance)", fontsize=11)
+    ax.set_title(
+        f"GNN Saliency: {drug_name} → {target_name}\n"
+        f"RF score: {rf_score:.4f}",
+        fontsize=12, fontweight="bold")
+    ax.spines[["top", "right"]].set_visible(False)
     plt.tight_layout()
-    if output_path:
-        plt.savefig(output_path, dpi=150, bbox_inches="tight")
-        print(f"[saved] {output_path}")
-    else:
-        plt.show()
-    plt.close(fig)
+    plt.savefig(output_path, dpi=150, bbox_inches="tight")
+    plt.close()
+
+
+# ---------------------------------------------------------------------------
+# Main pipeline
+# ---------------------------------------------------------------------------
+
+def run_saliency_analysis(top_candidates: int = 20,
+                          top_k_nodes: int = 15,
+                          out_dir: Path = OUT_DIR) -> pd.DataFrame:
+    """
+    Run saliency analysis for the top RF-identified drug repositioning
+    candidates that are mappable to DRKG.
+
+    Parameters
+    ----------
+    top_candidates : int
+        Number of RF candidates to explain (sorted by RF score desc)
+    top_k_nodes : int
+        Number of top influential DRKG nodes to report per prediction
+    """
+
+    out_dir.mkdir(parents=True, exist_ok=True)
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    print(f"Device: {device}")
+
+    # ------------------------------------------------------------------
+    # 1. Load RF candidates
+    # ------------------------------------------------------------------
+    if not CAND_CSV.exists():
+        raise FileNotFoundError(
+            f"Candidates file not found: {CAND_CSV}\n"
+            f"Run prepare_saliency_candidates.py first.")
+
+    candidates = pd.read_csv(CAND_CSV)
+    candidates = candidates.sort_values(
+        "score", ascending=False).head(top_candidates)
+    print(f"\n  RF candidates to explain: {len(candidates)}")
+    print(f"  Score range: "
+          f"{candidates['score'].min():.4f} – "
+          f"{candidates['score'].max():.4f}")
+
+    # ------------------------------------------------------------------
+    # 2. Load DRKG graph
+    # ------------------------------------------------------------------
+    print("\n  Loading DRKG graph ...")
+    data, node_to_idx, idx_to_node, _, _ = build_pd_drkg_graph()
+    data = data.to(device)
+
+    # ------------------------------------------------------------------
+    # 3. Load trained GNN model
+    # ------------------------------------------------------------------
+    model_path    = MODEL_DIR / "gnn_model.pt"
+    metadata_path = MODEL_DIR / "gnn_metadata.json"
+
+    if not model_path.exists():
+        raise FileNotFoundError(
+            f"Model not found: {model_path}\n"
+            f"Train the GNN first with train_gnn_v2.py")
+
+    with open(metadata_path) as f:
+        metadata = json.load(f)
+
+    params = metadata["best_params"]
+    model  = PDHeteroGNN(
+        metadata=data.metadata(),
+        hidden_channels=params["hidden_channels"],
+        out_channels=params["out_channels"],
+        num_layers=params["num_layers"],
+        dropout=params["dropout"],
+    ).to(device)
+
+    model.load_state_dict(
+        torch.load(model_path, map_location=device))
+    model.eval()
+    print(f"  Model loaded from {model_path}")
+    print(f"  Params: hidden={params['hidden_channels']} "
+          f"out={params['out_channels']} "
+          f"layers={params['num_layers']}")
+
+    # ------------------------------------------------------------------
+    # 4. Compute saliency for each candidate
+    # ------------------------------------------------------------------
+    print(f"\n  Computing saliency for {len(candidates)} candidates ...")
+    results = []
+
+    for i, row in candidates.iterrows():
+        drug_name   = row["drug_name"]
+        target_name = row["target_name"]
+        drug_idx    = int(row["drug_node_idx"])
+        target_idx  = int(row["target_node_idx"])
+        rf_score    = float(row["score"])
+
+        print(f"\n  [{i+1}/{len(candidates)}] "
+              f"{drug_name} → {target_name} "
+              f"(RF score: {rf_score:.4f})")
+
+        try:
+            # Compute saliency
+            saliency = compute_saliency(
+                model, data, drug_idx, target_idx, device)
+
+            # Get top-K influential nodes
+            top_nodes = get_top_nodes(
+                saliency, idx_to_node,
+                drug_idx, target_idx,
+                top_k=top_k_nodes,
+                exclude_self=True)
+
+            # Print top nodes
+            print(f"    Top influential nodes:")
+            for j, n in enumerate(top_nodes[:5]):
+                print(f"      {j+1}. [{n['ntype'][:4]}] "
+                      f"{n['entity_name'][:60]} "
+                      f"  importance={n['importance']:.6f}")
+
+            # Save visualisation
+            safe_name = f"{drug_name}_{target_name}"\
+                .replace(" ", "_").replace("/", "_")[:60]
+            plot_path = out_dir / f"saliency_{safe_name}.png"
+            plot_saliency(
+                top_nodes, drug_name, target_name,
+                rf_score, plot_path)
+
+            # Save top nodes to results
+            for rank, n in enumerate(top_nodes):
+                results.append({
+                    "drug_name":    drug_name,
+                    "target_name":  target_name,
+                    "drug_id":      row["drug_id"],
+                    "target_id":    row["target_id"],
+                    "rf_score":     rf_score,
+                    "rank":         rank + 1,
+                    "ntype":        n["ntype"],
+                    "entity_name":  n["entity_name"],
+                    "importance":   n["importance"],
+                })
+
+        except Exception as e:
+            print(f"    [ERROR] {drug_name} → {target_name}: {e}")
+            continue
+
+    # ------------------------------------------------------------------
+    # 5. Save results
+    # ------------------------------------------------------------------
+    results_df = pd.DataFrame(results)
+    out_csv    = out_dir / "saliency_results.csv"
+    results_df.to_csv(out_csv, index=False)
+
+    print(f"\n{'='*55}")
+    print(f"  Saliency analysis complete")
+    print(f"  Candidates explained: "
+          f"{results_df['drug_name'].nunique()}")
+    print(f"  Results saved to: {out_csv}")
+    print(f"  Plots saved to:   {out_dir}/")
+    print(f"{'='*55}")
+
+    # Summary: most commonly influential node types
+    if len(results_df) > 0:
+        print(f"\n  Most commonly influential node types:")
+        type_counts = results_df[results_df["rank"] <= 5]\
+            .groupby("ntype")["entity_name"].count()\
+            .sort_values(ascending=False)
+        for ntype, count in type_counts.items():
+            print(f"    {ntype:<25} {count:>4} appearances in top-5")
+
+        print(f"\n  Most commonly influential entities (top-5 across all):")
+        entity_counts = results_df[results_df["rank"] <= 5]\
+            .groupby("entity_name")["drug_name"].count()\
+            .sort_values(ascending=False).head(10)
+        for entity, count in entity_counts.items():
+            short = entity[:60]
+            print(f"    {short:<60} {count:>4}×")
+
+    return results_df
+
+
+# ---------------------------------------------------------------------------
+# CLI
+# ---------------------------------------------------------------------------
+
+def _parse_args():
+    p = argparse.ArgumentParser()
+    p.add_argument("--top_candidates", type=int, default=20,
+                   help="Number of RF candidates to explain (default 20)")
+    p.add_argument("--top_k", type=int, default=15,
+                   help="Top-K influential nodes per prediction (default 15)")
+    p.add_argument("--out_dir", type=Path, default=OUT_DIR)
+    return p.parse_args()
+
+
+if __name__ == "__main__":
+    args   = _parse_args()
+    result = run_saliency_analysis(
+        top_candidates=args.top_candidates,
+        top_k_nodes=args.top_k,
+        out_dir=args.out_dir)

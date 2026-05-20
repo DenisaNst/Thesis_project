@@ -4,11 +4,9 @@ import numpy as np
 import pandas as pd
 from Bio import SeqIO
 
-
 def infer_target_id_from_filename(path_obj: Path) -> str:
     stem = path_obj.stem
     return stem.split("_")[0] if "_" in stem else stem
-
 
 def load_fasta_sequences(fasta_dir: Path) -> pd.DataFrame:
     fasta_files = sorted(list(fasta_dir.glob("*.fasta")) + list(fasta_dir.glob("*.fa")))
@@ -68,15 +66,13 @@ def esm_mean_pooled_embeddings(
         ) from exc
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
-    print(f"[info] Loading ESM model '{model_name}' on {device}")
+    print(f"[info] Loading ESM model")
 
     tokenizer = AutoTokenizer.from_pretrained(model_name, token=hf_token)
     model = AutoModel.from_pretrained(model_name, token=hf_token).to(device)
     model.eval()
 
     all_embeddings = []
-
-    # ESM-2 tokenizer expects continuous strings, no spaces needed!
     seq_texts = sequences
 
     with torch.no_grad():
@@ -93,11 +89,11 @@ def esm_mean_pooled_embeddings(
             toks = {k: v.to(device) for k, v in toks.items()}
 
             outputs = model(**toks)
-            hidden = outputs.last_hidden_state  # [batch, seq_len, hidden_dim]
+            hidden = outputs.last_hidden_state
 
             attention_mask = toks["attention_mask"].clone()
 
-            # Exclude BOS/EOS when present by masking first and last valid positions.
+            # Exclude BOS/EOS when present by masking first and last valid positions
             for row_idx in range(attention_mask.shape[0]):
                 valid_positions = torch.where(attention_mask[row_idx] == 1)[0]
                 if len(valid_positions) >= 2:
@@ -206,7 +202,6 @@ def main():
         normalize=not args.no_normalize,
         hf_token=token,
     )
-
 
 if __name__ == "__main__":
     main()

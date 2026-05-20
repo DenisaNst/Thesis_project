@@ -101,10 +101,7 @@ def fetch_target_activities(target_ids, standard_types=("IC50", "Ki", "Kd"), max
                 print(f"  [retry {attempt}/{max_retries}] {tid} failed: {exc}")
                 if attempt < max_retries:
                     time.sleep(wait_s)
-        if not success:
-            print(f"  [skip] Could not fetch activities for {tid}")
     return pd.DataFrame(rows)
-
 
 def add_interaction_label(df, positive_pchembl_threshold=6.0):
     df = df.copy()
@@ -112,7 +109,6 @@ def add_interaction_label(df, positive_pchembl_threshold=6.0):
     df["standard_value"] = pd.to_numeric(df["standard_value"], errors="coerce")
     df["label"] = (df["pchembl_value"] >= positive_pchembl_threshold).astype(int)
     return df
-
 
 def save_intermediates(out_dir, indication_df, mech_df, target_df, act_df):
     indication_df.to_csv(out_dir / "pd_indications.csv", index=False)
@@ -131,14 +127,11 @@ def main():
     print(f"[info] PD molecules from indication search: {len(molecule_ids)}")
 
     target_ids, mech_df = get_targets_from_molecules(molecule_ids)
-    print(f"[info] Raw targets from mechanisms: {len(target_ids)}")
-
     target_df = get_target_metadata(target_ids)
     filtered_target_ids = filter_targets(target_df)
     print(f"[info] Filtered targets (human + single protein): {len(filtered_target_ids)}")
 
     act_df = fetch_target_activities(filtered_target_ids)
-    print(f"[info] Raw activity rows fetched: {len(act_df)}")
 
     if not act_df.empty:
         doc_ids = act_df["document_chembl_id"].dropna().unique()

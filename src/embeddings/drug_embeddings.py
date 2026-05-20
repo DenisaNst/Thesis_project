@@ -95,14 +95,12 @@ def main():
     input_path = project_root / "data" / "processed" / "fda_approved_drugs.csv"
     output_path = project_root / "data" / "processed" / "drug_embeddings.csv"
 
-    print("[info] Loading FDA-approved drugs...")
     df = load_data(input_path)
-
     print(f"[info] {len(df)} drugs loaded")
 
     tokenizer, model, device = load_model()
 
-    print("[info] Generating embeddings...")
+    print("[info] Generating embeddings")
     embeddings = embed_smiles(df["smiles"].tolist(), tokenizer, model, device)
 
     emb_df = pd.DataFrame(
@@ -111,11 +109,9 @@ def main():
     )
 
     result = pd.concat([df, emb_df], axis=1)
-
     result.to_csv(output_path, index=False)
 
     print(f"[done] Saved to {output_path}")
-
 
 if __name__ == "__main__":
     main()

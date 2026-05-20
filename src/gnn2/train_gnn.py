@@ -1,32 +1,29 @@
 """
-train_gnn.py  —  Trains PDHeteroGNN on FULL DRKG graph.
+train_gnn_pd.py  —  Trains PDHeteroGNN on PD-SPECIFIC DRKG subgraph.
 
 Approach:
-  - Full DRKG graph (~9.8M edges, all 6 node types)
-  - DRKG TransE embeddings for ALL node types (400d)
-  - No per-type input projections (all nodes same dimension)
+  - PD-specific subgraph (2-hop neighbourhood of Parkinson's node)
+  - ChEMBL MT embeddings for Compound nodes (768d)
+  - DRKG TransE embeddings for all other node types (400d)
+  - Per-type input projection layers (maps each type to hidden_channels)
   - Dot product predictor
   - BCE loss
   - Real ChEMBL inactives as negatives (pChEMBL < 6),
     supplemented with random pairs if not enough
   - Time-split evaluation (pre/post 2018)
-  - Focused hyperparameter search based on best results so far
+  - Random hyperparameter search + early stopping
   - Hits@5 and Hits@10
 
-Search space is intentionally tight — based on patterns from previous
-runs showing layers=1, hidden=64, out=32, dropout=0.2-0.3 consistently
-perform best. Only 10 trials needed since space is small.
-
 Imports from:
-  - build_drkg.py   (full DRKG graph — returns 5 values)
-  - GNN.py          (PDHeteroGNN without input projections)
+  - build_drkg_pd.py   (PD subgraph — returns 6 values including node_feature_dims)
+  - GNN_pd.py          (PDHeteroGNN WITH input projections)
 
 Results saved to:
-  - artifacts/gnn/
+  - artifacts/gnn_pd/
 
 Run:
-    python src/models_GNN/train_gnn.py --n_trials 3 --max_epochs 50
-    python src/models_GNN/train_gnn.py
+    python src/models_GNN/train_gnn_pd.py --n_trials 3 --max_epochs 50
+    python src/models_GNN/train_gnn_pd.py
 """
 
 from __future__ import annotations
@@ -48,27 +45,19 @@ PROJECT_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
 
 from torch_geometric.data import HeteroData
-from GNN import PDHeteroGNN
-from build_drkg import build_pd_drkg_graph, PRED_SRC, PRED_DST
+from src.gnn_final.GNN_pd import PDHeteroGNN                                      # with input projections
+from build_drkg_pd import build_pd_drkg_graph, PRED_SRC, PRED_DST  # PD subgraph, 6 return values
 
-OUT_DIR = PROJECT_ROOT / "artifacts" / "gnn"
+OUT_DIR = PROJECT_ROOT / "artifacts" / "gnn_pd"
 
-# Focused search space based on best results across all previous runs:
-#   - num_layers=1  fixed — layers>1 caused oversmoothing every time
-#   - hidden=64     won most trials in both full and PD runs
-#   - out=32        won most trials
-#   - lr=3e-4/1e-3  both appeared in top configs
-#   - dropout=0.2/0.3  sweet spot
-#   - neg_k=5       appeared in best PD config
-#   - weight_decay  small but non-zero helps regularisation
 SEARCH_SPACE = {
-    "hidden_channels": [64, 128],
-    "out_channels":    [16, 32],
+    "hidden_channels": [64, 128, 256],
+    "out_channels":    [32, 64],
     "lr":              [1e-3, 5e-4, 3e-4],
-    "dropout":         [0.2, 0.3],
+    "dropout":         [0.1, 0.2, 0.3],
     "weight_decay":    [1e-4, 1e-5],
-    "neg_k":           [5, 10],
-    "num_layers":      [1],
+    "neg_k":           [3, 5],
+    "num_layers":      [1, 2],
 }
 
 
@@ -138,8 +127,9 @@ def hits_at_k(model: PDHeteroGNN, data: HeteroData,
 
 def run_trial(params: dict, data: HeteroData,
               train_edges: np.ndarray, val_edges: np.ndarray,
-              device: torch.device, max_epochs: int = 200,
-              patience: int = 10,
+              node_feature_dims: dict,
+              device: torch.device, max_epochs: int = 300,
+              patience: int = 50,
               verbose: bool = False) -> tuple[float, PDHeteroGNN]:
     """
     Train one hyperparameter configuration.
@@ -149,12 +139,14 @@ def run_trial(params: dict, data: HeteroData,
     k    = params["neg_k"]
     data = data.to(device)
 
+    # GNN_pd.PDHeteroGNN — requires node_feature_dims for input projections
     model = PDHeteroGNN(
         metadata=data.metadata(),
         hidden_channels=params["hidden_channels"],
         out_channels=params["out_channels"],
         num_layers=params["num_layers"],
         dropout=params["dropout"],
+        node_feature_dims=node_feature_dims,
     ).to(device)
 
     with torch.no_grad():
@@ -273,6 +265,7 @@ def run_trial(params: dict, data: HeteroData,
 
 def random_search(n_trials: int, data: HeteroData,
                   train_edges: np.ndarray, val_edges: np.ndarray,
+                  node_feature_dims: dict,
                   device: torch.device, max_epochs: int,
                   patience: int) -> tuple[dict, pd.DataFrame]:
 
@@ -297,7 +290,8 @@ def random_search(n_trials: int, data: HeteroData,
 
         val_auc, _ = run_trial(
             params, data, train_edges, val_edges,
-            device, max_epochs, patience,
+            node_feature_dims, device,
+            max_epochs, patience,
             verbose=False)
 
         print(f"    -> val AUC: {val_auc:.4f}")
@@ -330,14 +324,12 @@ def evaluate(model: PDHeteroGNN, data: HeteroData,
 
         pos_sc = model.score_pairs(
             z,
-            torch.tensor(pos_edges[:, :2].T,
-                         dtype=torch.long, device=device),
+            torch.tensor(pos_edges[:, :2].T, dtype=torch.long, device=device),
             PRED_SRC, PRED_DST).cpu().numpy()
 
         neg_sc = model.score_pairs(
             z,
-            torch.tensor(neg_edges[:, :2].T,
-                         dtype=torch.long, device=device),
+            torch.tensor(neg_edges[:, :2].T, dtype=torch.long, device=device),
             PRED_SRC, PRED_DST).cpu().numpy()
 
     all_scores = np.concatenate([pos_sc, neg_sc])
@@ -364,7 +356,7 @@ def evaluate(model: PDHeteroGNN, data: HeteroData,
 # Main
 # ---------------------------------------------------------------------------
 
-def main(n_trials: int = 10, max_epochs: int = 200, patience: int = 10,
+def main(n_trials: int = 15, max_epochs: int = 300, patience: int = 50,
          val_fraction: float = 0.1, device_str: str = "cpu",
          out_dir: Path = OUT_DIR):
 
@@ -373,13 +365,15 @@ def main(n_trials: int = 10, max_epochs: int = 200, patience: int = 10,
                        torch.cuda.is_available()) else "cpu")
     print(f"Device: {device}")
 
-    # build_drkg.py returns exactly 5 values
-    data, node_to_idx, idx_to_node, train_edges, test_edges = \
-        build_pd_drkg_graph()
+    # build_drkg_pd.py returns exactly 6 values (includes node_feature_dims)
+    (data, node_to_idx, idx_to_node,
+     train_edges, test_edges,
+     node_feature_dims) = build_pd_drkg_graph()
 
     if len(train_edges) == 0:
         raise RuntimeError("No train edges found.")
 
+    print(f"\n  Node feature dims: {node_feature_dims}")
     print(f"\n  Train edges: {len(train_edges)} "
           f"(active={(train_edges[:,2]==1).sum()} "
           f"inactive={(train_edges[:,2]==0).sum()})")
@@ -396,7 +390,8 @@ def main(n_trials: int = 10, max_epochs: int = 200, patience: int = 10,
 
     best_params, results_df = random_search(
         n_trials, data, s_train, s_val,
-        device, max_epochs, patience)
+        node_feature_dims, device,
+        max_epochs, patience)
 
     out_dir.mkdir(parents=True, exist_ok=True)
     results_df.to_csv(out_dir / "search_results.csv", index=False)
@@ -408,7 +403,8 @@ def main(n_trials: int = 10, max_epochs: int = 200, patience: int = 10,
 
     _, model = run_trial(
         best_params, data, f_train, f_val,
-        device, max_epochs, patience,
+        node_feature_dims, device,
+        max_epochs, patience,
         verbose=True)
 
     metrics = evaluate(model, data, test_edges, device)
@@ -424,11 +420,12 @@ def main(n_trials: int = 10, max_epochs: int = 200, patience: int = 10,
 
     torch.save(model.state_dict(), out_dir / "gnn_model.pt")
     (out_dir / "gnn_metadata.json").write_text(json.dumps({
-        "best_params": best_params,
-        "pred_src":    PRED_SRC,
-        "pred_dst":    PRED_DST,
-        "node_types":  list(data.node_types),
-        "approach":    "full DRKG + TransE embeddings + BCE loss",
+        "best_params":       best_params,
+        "pred_src":          PRED_SRC,
+        "pred_dst":          PRED_DST,
+        "node_types":        list(data.node_types),
+        "node_feature_dims": node_feature_dims,
+        "approach":          "PD subgraph + ChEMBL-MT embeddings + input projections + BCE loss",
     }, indent=2))
     (out_dir / "metrics.json").write_text(json.dumps(metrics, indent=2))
     print(f"\n  [saved] -> {out_dir}")
@@ -442,9 +439,9 @@ def main(n_trials: int = 10, max_epochs: int = 200, patience: int = 10,
 
 def _parse_args():
     p = argparse.ArgumentParser()
-    p.add_argument("--n_trials",   type=int,  default=10)
-    p.add_argument("--max_epochs", type=int,  default=200)
-    p.add_argument("--patience",   type=int,  default=10)
+    p.add_argument("--n_trials",   type=int,  default=15)
+    p.add_argument("--max_epochs", type=int,  default=300)
+    p.add_argument("--patience",   type=int,  default=50)
     p.add_argument("--device",     type=str,  default="cpu",
                    dest="device_str")
     p.add_argument("--out_dir",    type=Path, default=OUT_DIR)

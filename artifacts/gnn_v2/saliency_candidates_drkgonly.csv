@@ -1,0 +1,143 @@
+drug_id,drug_name,target_id,target_name,drkg_drug_key,drkg_target_key,drug_node_idx,target_node_idx,score,source
+DB00490,Buspirone,CHEMBL247,Human immunodeficiency virus type 1 reverse transcriptase,Compound::DB00490,Gene::3350,1321,2164,0.9528541360026304,drkg_only
+DB14766,Etrasimod,CHEMBL2014,Nociceptin receptor,Compound::DB14766,Gene::4987,5514,1866,0.9469207919714084,drkg_only
+DB01264,Darunavir,CHEMBL2014,Nociceptin receptor,Compound::DB01264,Gene::4987,382,1866,0.941472804248531,drkg_only
+DB12523,Mizolastine,CHEMBL3535,"High affinity cGMP-specific 3',5'-cyclic phosphodiesterase 9A",Compound::DB12523,Gene::5152,10021,1843,0.9387649800284448,drkg_only
+DB15011,Avacopan,CHEMBL2063,Ceramide glucosyltransferase,Compound::DB15011,Gene::7357,9159,1065,0.9348032583385468,drkg_only
+DB00246,Ziprasidone,CHEMBL247,Human immunodeficiency virus type 1 reverse transcriptase,Compound::DB00246,Gene::3350,1514,2164,0.9333990438240156,drkg_only
+DB12070,Letermovir,CHEMBL1908389,Mitogen-activated protein kinase kinase kinase 12,Compound::DB12070,Gene::7786,119,3956,0.9333430103274454,drkg_only
+DB05039,Indacaterol,CHEMBL210,Beta-2 adrenergic receptor,Compound::DB05039,Gene::154,8481,518,0.9329842229027504,drkg_only
+DB11581,Venetoclax,CHEMBL1908389,Mitogen-activated protein kinase kinase kinase 12,Compound::DB11581,Gene::7786,4942,3956,0.9327731846335202,drkg_only
+DB12457,Rimegepant,CHEMBL247,Human immunodeficiency virus type 1 reverse transcriptase,Compound::DB12457,Gene::3350,5350,2164,0.9321305090535512,drkg_only
+DB08801,Dimetindene,CHEMBL211,Muscarinic acetylcholine receptor M2,Compound::DB08801,Gene::1129,5308,1687,0.9306554346921868,drkg_only
+DB01591,Solifenacin,CHEMBL247,Human immunodeficiency virus type 1 reverse transcriptase,Compound::DB01591,Gene::3350,1037,2164,0.930212271786178,drkg_only
+DB04868,Nilotinib,CHEMBL205,Carbonic anhydrase 2,Compound::DB04868,Gene::760,6766,1989,0.9296913403552024,drkg_only
+DB12874,Quizartinib,CHEMBL3535,"High affinity cGMP-specific 3',5'-cyclic phosphodiesterase 9A",Compound::DB12874,Gene::5152,6252,1843,0.9296786399395336,drkg_only
+DB14766,Etrasimod,CHEMBL264,Histamine H3 receptor,Compound::DB14766,Gene::57538,5514,24087,0.9283258797083472,drkg_only
+DB14512,Mometasone furoate,CHEMBL2034,Glucocorticoid receptor,Compound::DB14512,Gene::2908,5571,293,0.9281406831813044,drkg_only
+DB09195,Lorpiprazole,CHEMBL247,Human immunodeficiency virus type 1 reverse transcriptase,Compound::DB09195,Gene::3350,5125,2164,0.9279775450232476,drkg_only
+DB09143,Sonidegib,CHEMBL205,Carbonic anhydrase 2,Compound::DB09143,Gene::760,2176,1989,0.9267919872835136,drkg_only
+DB09038,Empagliflozin,CHEMBL264,Histamine H3 receptor,Compound::DB09038,Gene::57538,1797,24087,0.9266734225992824,drkg_only
+DB15569,Sotorasib,CHEMBL2014,Nociceptin receptor,Compound::DB15569,Gene::4987,14956,1866,0.92637728822061,drkg_only
+DB01591,Solifenacin,CHEMBL2014,Nociceptin receptor,Compound::DB01591,Gene::4987,1037,1866,0.9262970622498008,drkg_only
+DB00315,Zolmitriptan,CHEMBL3535,"High affinity cGMP-specific 3',5'-cyclic phosphodiesterase 9A",Compound::DB00315,Gene::5152,6638,1843,0.9262169711710624,drkg_only
+DB00436,Bendroflumethiazide,CHEMBL205,Carbonic anhydrase 2,Compound::DB00436,Gene::760,2294,1989,0.9257991320217264,drkg_only
+DB09378,Fluprednisolone,CHEMBL2034,Glucocorticoid receptor,Compound::DB09378,Gene::2908,10578,293,0.925454150610754,drkg_only
+DB11641,Vinflunine,CHEMBL2034,Glucocorticoid receptor,Compound::DB11641,Gene::2908,4583,293,0.9253299060287616,drkg_only
+DB15035,Zanubrutinib,CHEMBL1908389,Mitogen-activated protein kinase kinase kinase 12,Compound::DB15035,Gene::7786,3668,3956,0.9248822961332412,drkg_only
+DB14723,Larotrectinib,CHEMBL247,Human immunodeficiency virus type 1 reverse transcriptase,Compound::DB14723,Gene::3350,937,2164,0.924583616054465,drkg_only
+DB12267,Brigatinib,CHEMBL2014,Nociceptin receptor,Compound::DB12267,Gene::4987,4326,1866,0.92449933733015,drkg_only
+DB09297,Paritaprevir,CHEMBL205,Carbonic anhydrase 2,Compound::DB09297,Gene::760,2988,1989,0.9237300665650796,drkg_only
+DB11712,Tezacaftor,CHEMBL205,Carbonic anhydrase 2,Compound::DB11712,Gene::760,10091,1989,0.922116082283426,drkg_only
+DB06636,Isavuconazonium,CHEMBL2014,Nociceptin receptor,Compound::DB06636,Gene::4987,11821,1866,0.9218287764101656,drkg_only
+DB11574,Elbasvir,CHEMBL2014,Nociceptin receptor,Compound::DB11574,Gene::4987,3862,1866,0.9216509246549186,drkg_only
+DB06781,Difluprednate,CHEMBL2034,Glucocorticoid receptor,Compound::DB06781,Gene::2908,3901,293,0.9215408602501566,drkg_only
+DB01076,Atorvastatin,CHEMBL205,Carbonic anhydrase 2,Compound::DB01076,Gene::760,3250,1989,0.9212921048702222,drkg_only
+DB09027,Ledipasvir,CHEMBL2014,Nociceptin receptor,Compound::DB09027,Gene::4987,9141,1866,0.9203184035876116,drkg_only
+DB13941,Piperaquine,CHEMBL247,Human immunodeficiency virus type 1 reverse transcriptase,Compound::DB13941,Gene::3350,11345,2164,0.9198108925502664,drkg_only
+DB04842,Fluspirilene,CHEMBL264,Histamine H3 receptor,Compound::DB04842,Gene::57538,3758,24087,0.9196060941070904,drkg_only
+DB14860,Ensartinib,CHEMBL1908389,Mitogen-activated protein kinase kinase kinase 12,Compound::DB14860,Gene::7786,4843,3956,0.9195716659501572,drkg_only
+DB00695,Furosemide,CHEMBL205,Carbonic anhydrase 2,Compound::DB00695,Gene::760,7032,1989,0.9191063216811656,drkg_only
+DB09383,Meprednisone,CHEMBL2034,Glucocorticoid receptor,Compound::DB09383,Gene::2908,4337,293,0.9175475819772344,drkg_only
+DB12612,Ozanimod,CHEMBL2014,Nociceptin receptor,Compound::DB12612,Gene::4987,4216,1866,0.9172479438116332,drkg_only
+DB08816,Ticagrelor,CHEMBL205,Carbonic anhydrase 2,Compound::DB08816,Gene::760,5640,1989,0.9168254407676342,drkg_only
+DB06077,Lumateperone,CHEMBL247,Human immunodeficiency virus type 1 reverse transcriptase,Compound::DB06077,Gene::3350,1119,2164,0.9168244513068105,drkg_only
+DB14542,Hydrocortisone phosphate,CHEMBL2034,Glucocorticoid receptor,Compound::DB14542,Gene::2908,11415,293,0.9162026670755186,drkg_only
+DB11274,Dihydro-alpha-ergocryptine,CHEMBL2034,Glucocorticoid receptor,Compound::DB11274,Gene::2908,10716,293,0.9158263104381784,drkg_only
+DB14543,Hydrocortisone probutate,CHEMBL2034,Glucocorticoid receptor,Compound::DB14543,Gene::2908,9927,293,0.9156967157718602,drkg_only
+DB11712,Tezacaftor,CHEMBL2009,Glutamate receptor 1,Compound::DB11712,Gene::2890,10091,294,0.9155685670874394,drkg_only
+DB09319,Carindacillin,CHEMBL205,Carbonic anhydrase 2,Compound::DB09319,Gene::760,12396,1989,0.9150181220329656,drkg_only
+DB09065,Cobicistat,CHEMBL2014,Nociceptin receptor,Compound::DB09065,Gene::4987,434,1866,0.9148646574994148,drkg_only
+DB15011,Avacopan,CHEMBL205,Carbonic anhydrase 2,Compound::DB15011,Gene::760,9159,1989,0.9145690823927172,drkg_only
+DB15568,Adagrasib,CHEMBL264,Histamine H3 receptor,Compound::DB15568,Gene::57538,14955,24087,0.9144260714742986,drkg_only
+DB11273,Dihydroergocornine,CHEMBL2034,Glucocorticoid receptor,Compound::DB11273,Gene::2908,11351,293,0.914187178765754,drkg_only
+DB11581,Venetoclax,CHEMBL2014,Nociceptin receptor,Compound::DB11581,Gene::4987,4942,1866,0.9141196124765394,drkg_only
+DB08897,Aclidinium,CHEMBL214,5-hydroxytryptamine receptor 1A,Compound::DB08897,Gene::3350,4174,2164,0.9141192495890312,drkg_only
+DB08897,Aclidinium,CHEMBL247,Human immunodeficiency virus type 1 reverse transcriptase,Compound::DB08897,Gene::3350,4174,2164,0.9141192495890312,drkg_only
+DB06202,Lasofoxifene,CHEMBL264,Histamine H3 receptor,Compound::DB06202,Gene::57538,110,24087,0.9141116740583995,drkg_only
+DB14669,Betamethasone phosphate,CHEMBL2034,Glucocorticoid receptor,Compound::DB14669,Gene::2908,2569,293,0.9141039496722496,drkg_only
+DB11691,Naldemedine,CHEMBL2034,Glucocorticoid receptor,Compound::DB11691,Gene::2908,9248,293,0.9140149286568144,drkg_only
+DB08906,Fluticasone furoate,CHEMBL2034,Glucocorticoid receptor,Compound::DB08906,Gene::2908,7508,293,0.9131234903442884,drkg_only
+DB09038,Empagliflozin,CHEMBL2014,Nociceptin receptor,Compound::DB09038,Gene::4987,1797,1866,0.912864140222044,drkg_only
+DB06684,Vilazodone,CHEMBL214,5-hydroxytryptamine receptor 1A,Compound::DB06684,Gene::3350,4562,2164,0.9127559018702311,drkg_only
+DB06684,Vilazodone,CHEMBL247,Human immunodeficiency virus type 1 reverse transcriptase,Compound::DB06684,Gene::3350,4562,2164,0.9127559018702311,drkg_only
+DB09034,Suvorexant,CHEMBL2063,Ceramide glucosyltransferase,Compound::DB09034,Gene::7357,5770,1065,0.9125200421008836,drkg_only
+DB09183,Dasabuvir,CHEMBL205,Carbonic anhydrase 2,Compound::DB09183,Gene::760,2310,1989,0.9122954548772928,drkg_only
+DB00232,Methyclothiazide,CHEMBL205,Carbonic anhydrase 2,Compound::DB00232,Gene::760,1297,1989,0.9122861826614328,drkg_only
+DB05521,Telaprevir,CHEMBL2034,Glucocorticoid receptor,Compound::DB05521,Gene::2908,198,293,0.9116724312418032,drkg_only
+DB14019,Fosnetupitant,CHEMBL2063,Ceramide glucosyltransferase,Compound::DB14019,Gene::7357,12193,1065,0.911472963011599,drkg_only
+DB08897,Aclidinium,CHEMBL216,Muscarinic acetylcholine receptor M1,Compound::DB08897,Gene::1128,4174,1626,0.9112903374883756,drkg_only
+DB01130,Prednicarbate,CHEMBL2034,Glucocorticoid receptor,Compound::DB01130,Gene::2908,1074,293,0.9112565827578012,drkg_only
+DB08816,Ticagrelor,CHEMBL3535,"High affinity cGMP-specific 3',5'-cyclic phosphodiesterase 9A",Compound::DB08816,Gene::5152,5640,1843,0.9111726468665956,drkg_only
+DB13941,Piperaquine,CHEMBL2014,Nociceptin receptor,Compound::DB13941,Gene::4987,11345,1866,0.9108463254825748,drkg_only
+DB01388,Mibefradil,CHEMBL2034,Glucocorticoid receptor,Compound::DB01388,Gene::2908,2034,293,0.9107767054251772,drkg_only
+DB00959,Methylprednisolone,CHEMBL2034,Glucocorticoid receptor,Compound::DB00959,Gene::2908,7178,293,0.9106975611000084,drkg_only
+DB08815,Lurasidone,CHEMBL214,5-hydroxytryptamine receptor 1A,Compound::DB08815,Gene::3350,1602,2164,0.9101385418290386,drkg_only
+DB08815,Lurasidone,CHEMBL247,Human immunodeficiency virus type 1 reverse transcriptase,Compound::DB08815,Gene::3350,1602,2164,0.9101385418290386,drkg_only
+DB08901,Ponatinib,CHEMBL2063,Ceramide glucosyltransferase,Compound::DB08901,Gene::7357,7187,1065,0.9097618605645472,drkg_only
+DB00394,Beclomethasone dipropionate,CHEMBL2034,Glucocorticoid receptor,Compound::DB00394,Gene::2908,4666,293,0.9097139254629072,drkg_only
+DB12005,Nirogacestat,CHEMBL2014,Nociceptin receptor,Compound::DB12005,Gene::4987,4086,1866,0.9093480473544172,drkg_only
+DB14545,Hydrocortisone succinate,CHEMBL2034,Glucocorticoid receptor,Compound::DB14545,Gene::2908,11383,293,0.9091901675175332,drkg_only
+DB14860,Ensartinib,CHEMBL2014,Nociceptin receptor,Compound::DB14860,Gene::4987,4843,1866,0.9090439826430288,drkg_only
+DB12874,Quizartinib,CHEMBL264,Histamine H3 receptor,Compound::DB12874,Gene::57538,6252,24087,0.9087311849368048,drkg_only
+DB11938,Difelikefalin,CHEMBL2014,Nociceptin receptor,Compound::DB11938,Gene::4987,8071,1866,0.9084159244432204,drkg_only
+DB09143,Sonidegib,CHEMBL2063,Ceramide glucosyltransferase,Compound::DB09143,Gene::7357,2176,1065,0.908197372402432,drkg_only
+DB05667,Levoketoconazole,CHEMBL247,Human immunodeficiency virus type 1 reverse transcriptase,Compound::DB05667,Gene::3350,986,2164,0.9079786182511868,drkg_only
+DB00846,Flurandrenolide,CHEMBL264,Histamine H3 receptor,Compound::DB00846,Gene::57538,669,24087,0.9079444368224276,drkg_only
+DB00808,Indapamide,CHEMBL205,Carbonic anhydrase 2,Compound::DB00808,Gene::760,1073,1989,0.9077118913900094,drkg_only
+DB04835,Maraviroc,CHEMBL214,5-hydroxytryptamine receptor 1A,Compound::DB04835,Gene::3350,4760,2164,0.9075747292395082,drkg_only
+DB04835,Maraviroc,CHEMBL247,Human immunodeficiency virus type 1 reverse transcriptase,Compound::DB04835,Gene::3350,4760,2164,0.9075747292395082,drkg_only
+DB06202,Lasofoxifene,CHEMBL1908389,Mitogen-activated protein kinase kinase kinase 12,Compound::DB06202,Gene::7786,110,3956,0.9074877437596272,drkg_only
+DB11712,Tezacaftor,CHEMBL214,5-hydroxytryptamine receptor 1A,Compound::DB11712,Gene::3350,10091,2164,0.907110148659714,drkg_only
+DB11712,Tezacaftor,CHEMBL247,Human immunodeficiency virus type 1 reverse transcriptase,Compound::DB11712,Gene::3350,10091,2164,0.907110148659714,drkg_only
+DB15569,Sotorasib,CHEMBL214,5-hydroxytryptamine receptor 1A,Compound::DB15569,Gene::3350,14956,2164,0.9068592944687408,drkg_only
+DB15569,Sotorasib,CHEMBL247,Human immunodeficiency virus type 1 reverse transcriptase,Compound::DB15569,Gene::3350,14956,2164,0.9068592944687408,drkg_only
+DB01608,Periciazine,CHEMBL264,Histamine H3 receptor,Compound::DB01608,Gene::57538,3390,24087,0.9068496947551378,drkg_only
+DB14766,Etrasimod,CHEMBL2063,Ceramide glucosyltransferase,Compound::DB14766,Gene::7357,5514,1065,0.9068403191351642,drkg_only
+DB13158,Clobetasone,CHEMBL2034,Glucocorticoid receptor,Compound::DB13158,Gene::2908,5739,293,0.9067773383913608,drkg_only
+DB11581,Venetoclax,CHEMBL205,Carbonic anhydrase 2,Compound::DB11581,Gene::760,4942,1989,0.9067110436963314,drkg_only
+DB01263,Posaconazole,CHEMBL2014,Nociceptin receptor,Compound::DB01263,Gene::4987,3948,1866,0.9064864140175024,drkg_only
+DB01264,Darunavir,CHEMBL2034,Glucocorticoid receptor,Compound::DB01264,Gene::2908,382,293,0.9064737475816892,drkg_only
+DB12597,Asciminib,CHEMBL2063,Ceramide glucosyltransferase,Compound::DB12597,Gene::7357,2416,1065,0.906331100096608,drkg_only
+DB08934,Sofosbuvir,CHEMBL2034,Glucocorticoid receptor,Compound::DB08934,Gene::2908,226,293,0.906206273534088,drkg_only
+DB01106,Levocabastine,CHEMBL264,Histamine H3 receptor,Compound::DB01106,Gene::57538,5907,24087,0.9059292457440066,drkg_only
+DB13213,Butaperazine,CHEMBL264,Histamine H3 receptor,Compound::DB13213,Gene::57538,12026,24087,0.9059290850993252,drkg_only
+DB14766,Etrasimod,CHEMBL214,5-hydroxytryptamine receptor 1A,Compound::DB14766,Gene::3350,5514,2164,0.9059223597282744,drkg_only
+DB14766,Etrasimod,CHEMBL247,Human immunodeficiency virus type 1 reverse transcriptase,Compound::DB14766,Gene::3350,5514,2164,0.9059223597282744,drkg_only
+DB00549,Zafirlukast,CHEMBL205,Carbonic anhydrase 2,Compound::DB00549,Gene::760,1470,1989,0.9054573457014274,drkg_only
+DB11363,Alectinib,CHEMBL2014,Nociceptin receptor,Compound::DB11363,Gene::4987,3681,1866,0.9053977257603336,drkg_only
+DB11574,Elbasvir,CHEMBL1908389,Mitogen-activated protein kinase kinase kinase 12,Compound::DB11574,Gene::7786,3862,3956,0.904612252554086,drkg_only
+DB00873,Loteprednol,CHEMBL2034,Glucocorticoid receptor,Compound::DB00873,Gene::2908,1670,293,0.9040972009978449,drkg_only
+DB01063,Acetophenazine,CHEMBL264,Histamine H3 receptor,Compound::DB01063,Gene::57538,4080,24087,0.9038335450515584,drkg_only
+DB11761,Tenapanor,CHEMBL245,Muscarinic acetylcholine receptor M3,Compound::DB11761,Gene::1131,14897,1949,0.9033002051598644,drkg_only
+DB11581,Venetoclax,CHEMBL2034,Glucocorticoid receptor,Compound::DB11581,Gene::2908,4942,293,0.9032234873306844,drkg_only
+DB14860,Ensartinib,CHEMBL205,Carbonic anhydrase 2,Compound::DB14860,Gene::760,4843,1989,0.9032127523843462,drkg_only
+DB01601,Lopinavir,CHEMBL2014,Nociceptin receptor,Compound::DB01601,Gene::4987,9473,1866,0.90319436953504,drkg_only
+DB01208,Sparfloxacin,CHEMBL1908389,Mitogen-activated protein kinase kinase kinase 12,Compound::DB01208,Gene::7786,3318,3956,0.9030640143128608,drkg_only
+DB01430,Almitrine,CHEMBL1908389,Mitogen-activated protein kinase kinase kinase 12,Compound::DB01430,Gene::7786,1431,3956,0.9029992753373578,drkg_only
+DB12070,Letermovir,CHEMBL2014,Nociceptin receptor,Compound::DB12070,Gene::4987,119,1866,0.9025071790414156,drkg_only
+DB00947,Fulvestrant,CHEMBL205,Carbonic anhydrase 2,Compound::DB00947,Gene::760,5386,1989,0.9024466374356782,drkg_only
+DB12236,Bexagliflozin,CHEMBL2014,Nociceptin receptor,Compound::DB12236,Gene::4987,1615,1866,0.9023101426054918,drkg_only
+DB06374,Elacestrant,CHEMBL264,Histamine H3 receptor,Compound::DB06374,Gene::57538,14171,24087,0.9021743104196472,drkg_only
+DB09335,Alatrofloxacin,CHEMBL205,Carbonic anhydrase 2,Compound::DB09335,Gene::760,11694,1989,0.9021175544354166,drkg_only
+DB09291,Rolapitant,CHEMBL2014,Nociceptin receptor,Compound::DB09291,Gene::4987,3553,1866,0.9018738762833192,drkg_only
+DB09320,Procaine benzylpenicillin,CHEMBL2034,Glucocorticoid receptor,Compound::DB09320,Gene::2908,11531,293,0.9018664810366812,drkg_only
+DB00921,Buprenorphine,CHEMBL2014,Nociceptin receptor,Compound::DB00921,Gene::4987,11340,1866,0.901569092758624,drkg_only
+DB04868,Nilotinib,CHEMBL264,Histamine H3 receptor,Compound::DB04868,Gene::57538,6766,24087,0.9014731655063282,drkg_only
+DB15444,Elexacaftor,CHEMBL2014,Nociceptin receptor,Compound::DB15444,Gene::4987,11355,1866,0.9014064946669608,drkg_only
+DB12236,Bexagliflozin,CHEMBL264,Histamine H3 receptor,Compound::DB12236,Gene::57538,1615,24087,0.901369930209844,drkg_only
+DB12095,Telotristat ethyl,CHEMBL2014,Nociceptin receptor,Compound::DB12095,Gene::4987,3338,1866,0.9013026870273017,drkg_only
+DB09038,Empagliflozin,CHEMBL2034,Glucocorticoid receptor,Compound::DB09038,Gene::2908,1797,293,0.9011107534902836,drkg_only
+DB06290,Simeprevir,CHEMBL2034,Glucocorticoid receptor,Compound::DB06290,Gene::2908,72,293,0.9011081475686964,drkg_only
+DB09102,Daclatasvir,CHEMBL2014,Nociceptin receptor,Compound::DB09102,Gene::4987,375,1866,0.9010368979228118,drkg_only
+DB06077,Lumateperone,CHEMBL2014,Nociceptin receptor,Compound::DB06077,Gene::4987,1119,1866,0.9009184179474812,drkg_only
+DB06274,Alvimopan,CHEMBL264,Histamine H3 receptor,Compound::DB06274,Gene::57538,3241,24087,0.900840005767269,drkg_only
+DB12095,Telotristat ethyl,CHEMBL2063,Ceramide glucosyltransferase,Compound::DB12095,Gene::7357,3338,1065,0.9008216271656848,drkg_only
+DB11274,Dihydro-alpha-ergocryptine,CHEMBL264,Histamine H3 receptor,Compound::DB11274,Gene::57538,10716,24087,0.900614162321942,drkg_only
+DB06274,Alvimopan,CHEMBL2014,Nociceptin receptor,Compound::DB06274,Gene::4987,3241,1866,0.9005606080208297,drkg_only
+DB15328,Ubrogepant,CHEMBL264,Histamine H3 receptor,Compound::DB15328,Gene::57538,10560,24087,0.9004798890234226,drkg_only
+DB00220,Nelfinavir,CHEMBL205,Carbonic anhydrase 2,Compound::DB00220,Gene::760,262,1989,0.9002346629591972,drkg_only
+DB11613,Velpatasvir,CHEMBL264,Histamine H3 receptor,Compound::DB11613,Gene::57538,9912,24087,0.9002271800379924,drkg_only
+DB00921,Buprenorphine,CHEMBL214,5-hydroxytryptamine receptor 1A,Compound::DB00921,Gene::3350,11340,2164,0.9001200425759265,drkg_only
+DB00921,Buprenorphine,CHEMBL247,Human immunodeficiency virus type 1 reverse transcriptase,Compound::DB00921,Gene::3350,11340,2164,0.9001200425759265,drkg_only
+DB00320,Dihydroergotamine,CHEMBL2034,Glucocorticoid receptor,Compound::DB00320,Gene::2908,605,293,0.9001190431115335,drkg_only
