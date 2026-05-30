@@ -1,0 +1,161 @@
+drug_id,drug_name,target_id,score,rank,target_name,_lower,is_known_pd
+DB00158,Folic acid,CHEMBL205,0.9490949357986066,25,Carbonic anhydrase 2,folic acid,True
+DB00490,Buspirone,CHEMBL264,0.9468655480077924,29,Histamine H3 receptor,buspirone,True
+DB11642,Pitolisant,CHEMBL264,0.94471935963975,37,Histamine H3 receptor,pitolisant,True
+DB00877,Sirolimus,CHEMBL1902,0.934264449042266,71,Peptidyl-prolyl cis-trans isomerase FKBP1A,sirolimus,True
+DB01098,Rosuvastatin,CHEMBL205,0.9311381990442305,86,Carbonic anhydrase 2,rosuvastatin,True
+DB01200,Bromocriptine,CHEMBL2034,0.928167843543853,100,Glucocorticoid receptor,bromocriptine,True
+DB04868,Nilotinib,CHEMBL2034,0.9190636553054864,166,Glucocorticoid receptor,nilotinib,True
+DB06287,Temsirolimus,CHEMBL1902,0.9156223466173932,190,Peptidyl-prolyl cis-trans isomerase FKBP1A,temsirolimus,True
+DB05271,Rotigotine,CHEMBL264,0.9027438876904272,331,Histamine H3 receptor,rotigotine,True
+DB15490,Zuranolone,CHEMBL2034,0.9018190749942194,341,Glucocorticoid receptor,zuranolone,True
+DB00843,Donepezil,CHEMBL264,0.8941359378473234,427,Histamine H3 receptor,donepezil,True
+DB00641,Simvastatin,CHEMBL2034,0.8826574639599495,614,Glucocorticoid receptor,simvastatin,True
+DB03310,Glutathione disulfide,CHEMBL205,0.8808569488912978,644,Carbonic anhydrase 2,glutathione disulfide,True
+DB14644,Methylprednisolone hemisuccinate,CHEMBL2034,0.879826108979465,664,Glucocorticoid receptor,methylprednisolone hemisuccinate,True
+DB00572,Atropine,CHEMBL264,0.8784110640925574,686,Histamine H3 receptor,atropine,True
+DB01392,Yohimbine,CHEMBL2034,0.8756867949208437,747,Glucocorticoid receptor,yohimbine,True
+DB00589,Lisuride,CHEMBL214,0.8661431269868471,992,5-hydroxytryptamine receptor 1A,lisuride,True
+DB00248,Cabergoline,CHEMBL214,0.8614319900541664,1132,5-hydroxytryptamine receptor 1A,cabergoline,True
+DB11256,Levomefolic acid,CHEMBL205,0.8591235310618869,1204,Carbonic anhydrase 2,levomefolic acid,True
+DB00476,Duloxetine,CHEMBL228,0.8590234670313153,1206,Sodium-dependent serotonin transporter,duloxetine,True
+DB00218,Moxifloxacin,CHEMBL214,0.8533662918052876,1410,5-hydroxytryptamine receptor 1A,moxifloxacin,True
+DB01380,Cortisone acetate,CHEMBL2034,0.8532594729554912,1414,Glucocorticoid receptor,cortisone acetate,True
+DB00295,Morphine,CHEMBL233,0.8500795768227976,1526,Mu-type opioid receptor,morphine,True
+DB00860,Prednisolone,CHEMBL2034,0.846842857550793,1646,Glucocorticoid receptor,prednisolone,True
+DB01184,Domperidone,CHEMBL3535,0.8442319525327333,1759,"High affinity cGMP-specific 3',5'-cyclic phosphodiesterase 9A",domperidone,True
+DB00912,Repaglinide,CHEMBL2034,0.8435113512158822,1783,Glucocorticoid receptor,repaglinide,True
+DB00810,Biperiden,CHEMBL2014,0.8429990199335169,1807,Nociceptin receptor,biperiden,True
+DB00959,Methylprednisolone,CHEMBL2034,0.8429925580951247,1808,Glucocorticoid receptor,methylprednisolone,True
+DB13156,Inosine pranobex,CHEMBL205,0.8415322211483918,1863,Carbonic anhydrase 2,inosine pranobex,True
+DB00715,Paroxetine,CHEMBL228,0.8402269879422165,1912,Sodium-dependent serotonin transporter,paroxetine,True
+DB16629,Serdexmethylphenidate,CHEMBL205,0.8392548908292293,1957,Carbonic anhydrase 2,serdexmethylphenidate,True
+DB00184,Nicotine,CHEMBL264,0.8380200701565188,2005,Histamine H3 receptor,nicotine,True
+DB00497,Oxycodone,CHEMBL233,0.8369691816749458,2047,Mu-type opioid receptor,oxycodone,True
+DB01183,Naloxone,CHEMBL233,0.8354160972812535,2107,Mu-type opioid receptor,naloxone,True
+DB01065,Melatonin,CHEMBL264,0.8333713600192189,2216,Histamine H3 receptor,melatonin,True
+DB11632,Opicapone,CHEMBL3535,0.8310536394434237,2308,"High affinity cGMP-specific 3',5'-cyclic phosphodiesterase 9A",opicapone,True
+DB00300,Tenofovir disoproxil,CHEMBL205,0.8304975726671019,2333,Carbonic anhydrase 2,tenofovir disoproxil,True
+DB00273,Topiramate,CHEMBL2034,0.8294063216932172,2405,Glucocorticoid receptor,topiramate,True
+DB14643,Methylprednisolone aceponate,CHEMBL2034,0.8287223938155339,2444,Glucocorticoid receptor,methylprednisolone aceponate,True
+DB01186,Pergolide,CHEMBL264,0.827947518279942,2497,Histamine H3 receptor,pergolide,True
+DB00163,Vitamin E,CHEMBL2014,0.8261955472044424,2583,Nociceptin receptor,vitamin e,True
+DB00227,Lovastatin,CHEMBL2034,0.824227406514604,2675,Glucocorticoid receptor,lovastatin,True
+DB05316,Pimavanserin,CHEMBL234,0.8239796798528107,2691,D(3) dopamine receptor,pimavanserin,True
+DB16683,Foslevodopa,CHEMBL205,0.822008861437267,2797,Carbonic anhydrase 2,foslevodopa,True
+DB00687,Fludrocortisone,CHEMBL2034,0.8203549327693079,2886,Glucocorticoid receptor,fludrocortisone,True
+DB00285,Venlafaxine,CHEMBL264,0.8191318233878532,2946,Histamine H3 receptor,venlafaxine,True
+DB08997,Dexetimide,CHEMBL264,0.8182184254480867,2987,Histamine H3 receptor,dexetimide,True
+DB16171,Foscarbidopa,CHEMBL205,0.8172328280594479,3046,Carbonic anhydrase 2,foscarbidopa,True
+DB00413,Pramipexole,CHEMBL219,0.8169091410057171,3066,D(4) dopamine receptor,pramipexole,True
+DB13292,Pimethixene,CHEMBL231,0.8151571200230633,3185,Histamine H1 receptor,pimethixene,True
+DB01367,Rasagiline,CHEMBL264,0.8136551351933748,3269,Histamine H3 receptor,rasagiline,True
+DB00332,Ipratropium,CHEMBL214,0.8133778325971678,3289,5-hydroxytryptamine receptor 1A,ipratropium,True
+DB12404,Remimazolam,CHEMBL2014,0.8098313538944764,3496,Nociceptin receptor,remimazolam,True
+DB11859,Brexanolone,CHEMBL2014,0.8096128127136532,3511,Nociceptin receptor,brexanolone,True
+DB00486,Nabilone,CHEMBL2034,0.8087982655916504,3567,Glucocorticoid receptor,nabilone,True
+DB00376,Trihexyphenidyl,CHEMBL264,0.8075481815022497,3644,Histamine H3 receptor,trihexyphenidyl,True
+DB00471,Montelukast,CHEMBL2063,0.8065896760502613,3731,Ceramide glucosyltransferase,montelukast,True
+DB00714,Apomorphine,CHEMBL214,0.7992883063641835,4217,5-hydroxytryptamine receptor 1A,apomorphine,True
+DB00387,Procyclidine,CHEMBL264,0.7957336395729047,4503,Histamine H3 receptor,procyclidine,True
+DB01212,Ceftriaxone,CHEMBL205,0.7945573212246182,4589,Carbonic anhydrase 2,ceftriaxone,True
+DB00494,Entacapone,CHEMBL2023,0.7919055658114985,4787,Catechol O-methyltransferase,entacapone,True
+DB01224,Quetiapine,CHEMBL214,0.791311086203208,4833,5-hydroxytryptamine receptor 1A,quetiapine,True
+DB00169,Cholecalciferol,CHEMBL264,0.7912231287349166,4840,Histamine H3 receptor,cholecalciferol,True
+DB00514,Dextromethorphan,CHEMBL264,0.790586107319543,4885,Histamine H3 receptor,dextromethorphan,True
+DB01173,Orphenadrine,CHEMBL214,0.789615160028174,4974,5-hydroxytryptamine receptor 1A,orphenadrine,True
+DB01162,Terazosin,CHEMBL3535,0.7867975926496115,5197,"High affinity cGMP-specific 3',5'-cyclic phosphodiesterase 9A",terazosin,True
+DB01205,Flumazenil,CHEMBL214,0.7812313115324676,5655,5-hydroxytryptamine receptor 1A,flumazenil,True
+DB00809,Tropicamide,CHEMBL216,0.7809977703267669,5676,Muscarinic acetylcholine receptor M1,tropicamide,True
+DB00203,Sildenafil,CHEMBL264,0.7806191429973992,5714,Histamine H3 receptor,sildenafil,True
+DB06654,Safinamide,CHEMBL264,0.779456364556048,5825,Histamine H3 receptor,safinamide,True
+DB01273,Varenicline,CHEMBL214,0.7785075952559465,5906,5-hydroxytryptamine receptor 1A,varenicline,True
+DB14483,Calcium ascorbate,CHEMBL214,0.7767121901405046,6057,5-hydroxytryptamine receptor 1A,calcium ascorbate,True
+DB09270,Ubidecarenone,CHEMBL1902,0.774748391930515,6226,Peptidyl-prolyl cis-trans isomerase FKBP1A,ubidecarenone,True
+DB00289,Atomoxetine,CHEMBL264,0.7736155820046341,6333,Histamine H3 receptor,atomoxetine,True
+DB00571,Propranolol,CHEMBL210,0.767328947811676,6911,Beta-2 adrenergic receptor,propranolol,True
+DB00270,Isradipine,CHEMBL2014,0.7659765841507479,7073,Nociceptin receptor,isradipine,True
+DB01220,Rifaximin,CHEMBL2034,0.7655860577906479,7127,Glucocorticoid receptor,rifaximin,True
+DB01211,Clarithromycin,CHEMBL1902,0.7650184461055655,7182,Peptidyl-prolyl cis-trans isomerase FKBP1A,clarithromycin,True
+DB06742,Ambroxol,CHEMBL2014,0.7628052019468134,7402,Nociceptin receptor,ambroxol,True
+DB01175,Escitalopram,CHEMBL264,0.7615320720623757,7550,Histamine H3 receptor,escitalopram,True
+DB00215,Citalopram,CHEMBL264,0.759677296975876,7752,Histamine H3 receptor,citalopram,True
+DB08909,Glycerol phenylbutyrate,CHEMBL214,0.7591333388272784,7824,5-hydroxytryptamine receptor 1A,glycerol phenylbutyrate,True
+DB13142,Calcium glubionate anhydrous,CHEMBL1902,0.7588406911183019,7862,Peptidyl-prolyl cis-trans isomerase FKBP1A,calcium glubionate anhydrous,True
+DB08883,Perampanel,CHEMBL2009,0.7572365415551946,8043,Glutamate receptor 1,perampanel,True
+DB11093,Calcium citrate,CHEMBL264,0.7564460320094673,8154,Histamine H3 receptor,calcium citrate,True
+DB01017,Minocycline,CHEMBL2034,0.7556740714544721,8241,Glucocorticoid receptor,minocycline,True
+DB01037,Selegiline,CHEMBL2039,0.7525738379525974,8617,Amine oxidase [flavin-containing] B,selegiline,True
+DB00326,Calcium glucoheptonate,CHEMBL1902,0.7523319171280713,8641,Peptidyl-prolyl cis-trans isomerase FKBP1A,calcium glucoheptonate,True
+DB11757,Istradefylline,CHEMBL2014,0.7432418414095531,9763,Nociceptin receptor,istradefylline,True
+DB14598,Edetate calcium disodium anhydrous,CHEMBL264,0.7403879600435732,10173,Histamine H3 receptor,edetate calcium disodium anhydrous,True
+DB00682,Warfarin,CHEMBL205,0.738841026429952,10385,Carbonic anhydrase 2,warfarin,True
+DB00425,Zolpidem,CHEMBL1908389,0.7330172010719788,11234,Mitogen-activated protein kinase kinase kinase 12,zolpidem,True
+DB11348,Calcium Phosphate,CHEMBL234,0.7310948877615135,11503,D(3) dopamine receptor,calcium phosphate,True
+DB00254,Doxycycline,CHEMBL205,0.7291782605914301,11780,Carbonic anhydrase 2,doxycycline,True
+DB00683,Midazolam,CHEMBL264,0.7283926211719814,11916,Histamine H3 receptor,midazolam,True
+DB00915,Amantadine,CHEMBL264,0.7280308253361165,11948,Histamine H3 receptor,amantadine,True
+DB06701,Dexmethylphenidate,CHEMBL264,0.7258534622061815,12256,Histamine H3 receptor,dexmethylphenidate,True
+DB15678,Calcium undecylenate,CHEMBL214,0.7241476553913355,12532,5-hydroxytryptamine receptor 1A,calcium undecylenate,True
+DB01407,Clenbuterol,CHEMBL228,0.7235409277169725,12641,Sodium-dependent serotonin transporter,clenbuterol,True
+DB11126,Calcium gluconate,CHEMBL2014,0.7232322202597671,12692,Nociceptin receptor,calcium gluconate,True
+DB00131,Adenosine phosphate,CHEMBL2014,0.7216606926472499,12919,Nociceptin receptor,adenosine phosphate,True
+DB00640,Adenosine,CHEMBL2014,0.7211825955371174,13023,Nociceptin receptor,adenosine,True
+DB06413,Armodafinil,CHEMBL2014,0.720618053895754,13131,Nociceptin receptor,armodafinil,True
+DB00422,Methylphenidate,CHEMBL214,0.7203549976595408,13172,5-hydroxytryptamine receptor 1A,methylphenidate,True
+DB00323,Tolcapone,CHEMBL2023,0.7177198106440004,13584,Catechol O-methyltransferase,tolcapone,True
+DB01132,Pioglitazone,CHEMBL264,0.7155737431342533,13973,Histamine H3 receptor,pioglitazone,True
+DB01241,Gemfibrozil,CHEMBL264,0.7139382067319314,14267,Histamine H3 receptor,gemfibrozil,True
+DB11823,Esketamine,CHEMBL214,0.7112807817238261,14695,5-hydroxytryptamine receptor 1A,esketamine,True
+DB11328,Tetradecyl hydrogen sulfate (ester),CHEMBL2014,0.7099819043081413,14930,Nociceptin receptor,tetradecyl hydrogen sulfate (ester),True
+DB11168,Calcium threonate,CHEMBL264,0.7095377365836169,15032,Histamine H3 receptor,calcium threonate,True
+DB11264,Calcium glycerophosphate,CHEMBL264,0.7087007983037898,15200,Histamine H3 receptor,calcium glycerophosphate,True
+DB00988,Dopamine,CHEMBL264,0.7058747210026931,15739,Histamine H3 receptor,dopamine,True
+DB01043,Memantine,CHEMBL264,0.7041418404354944,16062,Histamine H3 receptor,memantine,True
+DB00564,Carbamazepine,CHEMBL264,0.7030024002066336,16283,Histamine H3 receptor,carbamazepine,True
+DB04335,Inosine,CHEMBL214,0.702582081435312,16356,5-hydroxytryptamine receptor 1A,inosine,True
+DB14933,Nicotinamide riboside,CHEMBL2014,0.7020809105892513,16454,Nociceptin receptor,nicotinamide riboside,True
+DB01164,Calcium chloride,CHEMBL214,0.7019339479078586,16486,5-hydroxytryptamine receptor 1A,calcium chloride,True
+DB01221,Ketamine,CHEMBL2014,0.7002604908155466,16850,Nociceptin receptor,ketamine,True
+DB00662,Trimethobenzamide,CHEMBL2014,0.6999545801573402,16904,Nociceptin receptor,trimethobenzamide,True
+DB14481,Calcium phosphate dihydrate,CHEMBL264,0.6985162327337889,17202,Histamine H3 receptor,calcium phosphate dihydrate,True
+DB00190,Carbidopa,CHEMBL264,0.6945094046644938,18048,Histamine H3 receptor,carbidopa,True
+DB01045,Rifampin,CHEMBL234,0.6917290868686734,18672,D(3) dopamine receptor,rifampin,True
+DB09398,Fluoride ion F-18,CHEMBL264,0.6897553460111177,19126,Histamine H3 receptor,fluoride ion f-18,True
+DB09116,Calcium carbimide,CHEMBL2014,0.6889663083016075,19299,Nociceptin receptor,calcium carbimide,True
+DB13800,Calcium levulinate,CHEMBL264,0.6879241602410263,19550,Histamine H3 receptor,calcium levulinate,True
+DB13962,Calcium saccharate,CHEMBL264,0.6859508173263625,19980,Histamine H3 receptor,calcium saccharate,True
+DB00143,Glutathione,CHEMBL280,0.6856605888210192,20042,Collagenase 3,glutathione,True
+DB00201,Caffeine,CHEMBL2014,0.6851628987794002,20144,Nociceptin receptor,caffeine,True
+DB00258,Calcium acetate,CHEMBL264,0.6843232507657883,20342,Histamine H3 receptor,calcium acetate,True
+DB01592,Iron,CHEMBL264,0.680557077752227,21294,Histamine H3 receptor,iron,True
+DB00989,Rivastigmine,CHEMBL264,0.6761955138821913,22316,Histamine H3 receptor,rivastigmine,True
+DB00745,Modafinil,CHEMBL2014,0.6740928421279875,22876,Nociceptin receptor,modafinil,True
+DB14509,Lithium carbonate,CHEMBL264,0.6729531184073794,23144,Histamine H3 receptor,lithium carbonate,True
+DB13231,Calcium lactate,CHEMBL264,0.6718183128025778,23444,Histamine H3 receptor,calcium lactate,True
+DB06262,Droxidopa,CHEMBL2014,0.6717102729129549,23474,Nociceptin receptor,droxidopa,True
+DB08826,Deferiprone,CHEMBL2009,0.65993311604021,26737,Glutamate receptor 1,deferiprone,True
+DB00909,Zonisamide,CHEMBL2009,0.6565976302679343,27742,Glutamate receptor 1,zonisamide,True
+DB09072,Sodium oxybate,CHEMBL264,0.6563356571002988,27823,Histamine H3 receptor,sodium oxybate,True
+DB00545,Pyridostigmine,CHEMBL264,0.6547009957046839,28307,Histamine H3 receptor,pyridostigmine,True
+DB06724,Calcium carbonate,CHEMBL214,0.651530748770555,29297,5-hydroxytryptamine receptor 1A,calcium carbonate,True
+DB14502,"Sodium phosphate, dibasic",CHEMBL264,0.6512298485607649,29395,Histamine H3 receptor,"sodium phosphate, dibasic",True
+DB09130,Copper,CHEMBL264,0.6495827326976621,29925,Histamine H3 receptor,copper,True
+DB00806,Pentoxifylline,CHEMBL264,0.6451224155563465,31433,Histamine H3 receptor,pentoxifylline,True
+DB02701,Nicotinamide,CHEMBL264,0.6433499810350922,32010,Histamine H3 receptor,nicotinamide,True
+DB00148,Creatine,CHEMBL2736,0.6411811736656259,32761,Metabotropic glutamate receptor 4,creatine,True
+DB00268,Ropinirole,CHEMBL219,0.6406679857271399,32951,D(4) dopamine receptor,ropinirole,True
+DB01373,Calcium,CHEMBL264,0.6395008510270691,33347,Histamine H3 receptor,calcium,True
+DB11072,Hydrogen fluoride,CHEMBL264,0.6366025462913717,34364,Histamine H3 receptor,hydrogen fluoride,True
+DB01202,Levetiracetam,CHEMBL264,0.6339792288512093,35301,Histamine H3 receptor,levetiracetam,True
+DB03756,Doconexent,CHEMBL264,0.6329116567004354,35685,Histamine H3 receptor,doconexent,True
+DB11091,Hydrogen peroxide,CHEMBL214,0.6314859912913853,36256,5-hydroxytryptamine receptor 1A,hydrogen peroxide,True
+DB00316,Acetaminophen,CHEMBL264,0.6261913742602394,38242,Histamine H3 receptor,acetaminophen,True
+DB11257,Fluoride ion,CHEMBL264,0.623222254210704,39369,Histamine H3 receptor,fluoride ion,True
+DB12783,Benserazide,CHEMBL2009,0.6197183324282848,40753,Glutamate receptor 1,benserazide,True
+DB00151,Cysteine,CHEMBL264,0.6190651793699811,41031,Histamine H3 receptor,cysteine,True
+DB09153,Sodium chloride,CHEMBL214,0.6116188950756768,44159,5-hydroxytryptamine receptor 1A,sodium chloride,True
+DB01235,Levodopa,CHEMBL2009,0.5987161304047041,50028,Glutamate receptor 1,levodopa,True
+DB06151,Acetylcysteine,CHEMBL4016,0.597136331068513,50783,Glutamate receptor 2,acetylcysteine,True
+DB00331,Metformin,CHEMBL2014,0.5919684785420133,53322,Nociceptin receptor,metformin,True
+DB09061,Cannabidiol,CHEMBL228,0.5686699876087649,66032,Sodium-dependent serotonin transporter,cannabidiol,True
