@@ -1,3 +1,25 @@
+"""
+This module generates chemical embeddings for drug molecules using ChemBERTa.
+It processes molecular data, canonicalizes SMILES strings for consistency,
+and produces dense vector embeddings suitable for downstream machine learning tasks.
+
+Key functionality:
+  - Load ChEMBL molecule data from CSV with SMILES strings
+  - Canonicalize SMILES to remove duplicates and invalid molecules
+  - Generate embeddings using the pre-trained ChemBERTa model
+  - Apply mean pooling with attention mask for optimal representation
+  - Normalize embeddings to unit length for similarity comparisons
+
+Dependencies:
+  - rdkit: SMILES canonicalization and validation
+  - transformers: ChemBERTa model and tokenizer
+  - torch: GPU acceleration support
+  - pandas, numpy: Data handling
+
+Output:
+  Saves embeddings to CSV with molecule IDs, SMILES, and 512-dimensional vectors.
+"""
+
 from pathlib import Path
 import numpy as np
 import pandas as pd
@@ -10,9 +32,6 @@ from transformers import AutoModel, AutoTokenizer
 MODEL_NAME = "seyonec/ChemBERTa-zinc-base-v1"
 
 def canonicalize_smiles(smiles):
-    """Standardize SMILES to canonical form."""
-    if not isinstance(smiles, str) or not smiles.strip():
-        return None
     mol = Chem.MolFromSmiles(smiles, sanitize=False)
     if mol is not None:
         try:
@@ -24,7 +43,6 @@ def canonicalize_smiles(smiles):
 
 
 def load_chembl_data(path):
-    """Load SMILES and canonicalize."""
     df = pd.read_csv(path)
     df = df[["molecule_chembl_id", "smiles"]].copy()
 
@@ -39,7 +57,6 @@ def load_chembl_data(path):
 
 
 def load_model():
-    """Load ChemBERTa tokenizer and model."""
     device = "cuda" if torch.cuda.is_available() else "cpu"
     tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
     model = AutoModel.from_pretrained(MODEL_NAME).to(device)
@@ -48,7 +65,6 @@ def load_model():
 
 
 def embed_smiles(smiles_list, tokenizer, model, device, batch_size=32):
-    """Generate ChemBERTa embeddings for SMILES."""
     all_embeddings = []
 
     with torch.no_grad():
@@ -63,7 +79,6 @@ def embed_smiles(smiles_list, tokenizer, model, device, batch_size=32):
             pooled = F.normalize(pooled, p=2, dim=1)
 
             all_embeddings.append(pooled.cpu().numpy())
-
     return np.vstack(all_embeddings)
 
 

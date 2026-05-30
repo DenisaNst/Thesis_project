@@ -1,5 +1,36 @@
 from __future__ import annotations
 
+"""
+Comprehensive evaluation of Random Forest model predictions on labeled drug-target
+interaction data. Computes standard classification metrics, generates visualizations,
+and performs top-k enrichment analysis to assess model quality and ranking ability.
+
+Key functionality:
+  - Load trained RF model and merge interaction labels with drug and protein embeddings
+  - Generate probabilistic predictions for drug-target pairs
+  - Compute classification metrics: accuracy, F1, ROC-AUC, PR-AUC
+  - Visualize score distributions: known positives vs negatives (histogram)
+  - Plot ROC and Precision-Recall curves with AUC scores
+  - Compute top-k enrichment: precision, recall, enrichment factor at k={10,25,50,...,1000}
+  - Normalize column names across different data sources (ChEMBL vs DrugBank IDs)
+
+Output:
+  - CSV: evaluation_scores.csv with per-pair predictions and probabilities
+  - CSV: topk_enrichment.csv with precision/recall/enrichment at each k
+  - PNG: score_histograms.png showing separation of positives vs negatives
+  - PNG: roc_pr_curves.png showing ROC and Precision-Recall performance
+  - JSON: metrics.json with summary statistics (AUC, F1, positive rate, etc.)
+
+Dependencies:
+  - scikit-learn: RF model loading, metrics computation
+  - pandas, numpy: Data manipulation
+  - matplotlib: Visualization
+
+Note:
+  Column normalization handles different naming conventions (molecule_chembl_id → drug_id,
+  target_chembl_id → target_id) to ensure compatibility across data sources.
+"""
+
 import argparse
 import json
 import pickle
@@ -51,10 +82,6 @@ def prepare_matrix(
         c for c in merged.columns
         if c.startswith("drug_emb_") or c.startswith("target_emb_")
     ]
-    if not feature_cols:
-        raise ValueError("No embedding columns found after merging.")
-    if "label" not in merged.columns:
-        raise ValueError("Interaction dataframe must contain a 'label' column.")
 
     X = merged[feature_cols].to_numpy(dtype=np.float32)
     y = merged["label"].to_numpy(dtype=int)
@@ -62,10 +89,6 @@ def prepare_matrix(
 
 
 def get_positive_class_probabilities(clf, X: np.ndarray) -> np.ndarray:
-    if not hasattr(clf, "predict_proba"):
-        raise ValueError("Model does not support predict_proba().")
-    if not hasattr(clf, "classes_"):
-        raise ValueError("Model does not expose classes_. Is it fitted?")
     classes = list(clf.classes_)
     if 1 in classes:
         pos_idx = classes.index(1)
@@ -160,7 +183,6 @@ def plot_roc_pr_curves(df: pd.DataFrame, out_path: Path) -> dict:
 
 
 def main() -> None:
-    # Compute project root from this script's location
     project_root = Path(__file__).resolve().parents[2]
 
     parser = argparse.ArgumentParser(
@@ -206,55 +228,25 @@ def main() -> None:
     args = parser.parse_args()
     args.out_dir.mkdir(parents=True, exist_ok=True)
 
-    print(f"[info] Project root: {project_root}")
-    print(f"[info] Model path: {args.model_path}")
-
-    # Load metadata to get feature_cols (important for consistency)
-    print("[1/5] Loading model and metadata...")
+    print("Loading model and metadata")
     clf = load_model(args.model_path)
 
     if args.metadata_path.exists():
         metadata = json.loads(args.metadata_path.read_text(encoding="utf-8"))
         feature_cols_from_metadata = metadata.get("feature_cols", None)
         print(f"  Metadata loaded from: {args.metadata_path}")
-    else:
-        feature_cols_from_metadata = None
-        print(f"  [warn] Metadata not found at {args.metadata_path} — will infer feature_cols from data")
 
-    print("[2/5] Loading data...")
+    print(" Loading data")
     interactions = pd.read_csv(args.interactions_csv)
     interactions = normalize_id_columns(interactions)
-
-    if "label" not in interactions.columns:
-        if "pchembl_value" not in interactions.columns:
-            raise ValueError(
-                "Interactions CSV must contain either 'label' or 'pchembl_value'."
-            )
-        interactions["pchembl_value"] = pd.to_numeric(interactions["pchembl_value"], errors="coerce")
-        interactions["label"] = (interactions["pchembl_value"] >= args.label_threshold).astype(int)
 
     drug_emb = pd.read_csv(args.drug_embeddings_csv)
     protein_emb = pd.read_csv(args.protein_embeddings_csv)
 
-    print("[3/5] Building feature matrix...")
+    print(" Building feature matrix")
     merged, X, y, feature_cols_from_data = prepare_matrix(interactions, drug_emb, protein_emb)
-    print(f"  Rows after merge: {len(merged):,}")
-    print(f"  Features inferred from data: {len(feature_cols_from_data)}")
 
-    # Use feature_cols from metadata if available, else from data
-    if feature_cols_from_metadata:
-        if len(feature_cols_from_metadata) != X.shape[1]:
-            raise ValueError(
-                f"Mismatch: metadata has {len(feature_cols_from_metadata)} features, "
-                f"but data has {X.shape[1]}. Check that you're using the same embeddings as training."
-            )
-        feature_cols = feature_cols_from_metadata
-        print(f"  Using feature_cols from metadata")
-    else:
-        feature_cols = feature_cols_from_data
-        print(f"  Using feature_cols inferred from data")
-
-    print("[4/5] Scoring predictions...")
+    print("Scoring predictions")
     probs = get_positive_class_probabilities(clf, X)
     preds = (probs >= 0.5).astype(int)
 
@@ -269,7 +261,6 @@ def main() -> None:
     eval_path = args.out_dir / "evaluation_scores.csv"
     eval_df.to_csv(eval_path, index=False)
 
-    print("[5/5] Computing metrics and plots...")
     metrics = {
         "accuracy": float(accuracy_score(y, preds)),
         "f1": float(f1_score(y, preds, zero_division=0)),
@@ -293,7 +284,6 @@ def main() -> None:
     metrics_path.write_text(json.dumps(metrics, indent=2), encoding="utf-8")
 
     print("\nSummary")
-    print("-------")
     for k, v in metrics.items():
         print(f"{k}: {v}")
     print(f"\nSaved:")

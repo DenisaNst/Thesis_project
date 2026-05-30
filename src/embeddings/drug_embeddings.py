@@ -1,7 +1,32 @@
+"""
+This module generates chemical embeddings for FDA-approved drugs using ChemBERTa.
+It processes drug data from DrugBank, canonicalizes SMILES strings for consistency, and
+produces dense vector embeddings for computational drug analysis tasks.
+
+Key functionality:
+  - Load FDA-approved drug data with DrugBank IDs and SMILES strings
+  - Standardize column names and filter for required fields
+  - Canonicalize SMILES to ensure valid chemistry and remove duplicates
+  - Generate embeddings using the pre-trained ChemBERTa model
+  - Apply mean pooling with attention mask for optimal representation
+  - Normalize embeddings to unit length for similarity comparisons
+
+Dependencies:
+  - rdkit: SMILES canonicalization and validation
+  - transformers: ChemBERTa model and tokenizer
+  - torch: GPU acceleration support
+  - pandas, numpy: Data handling
+
+Input:
+  FDA-approved drug data with columns: drugbank_id, name, smiles
+
+Output:
+  Saves embeddings to CSV with drug IDs, names, SMILES, and 512-dimensional
+  embedding vectors (drug_emb_0 through drug_emb_511).
+"""
 from pathlib import Path
 import numpy as np
 import pandas as pd
-from rdkit import Chem
 
 import torch
 import torch.nn.functional as F
@@ -12,8 +37,6 @@ MODEL_NAME = "seyonec/ChemBERTa-zinc-base-v1"
 from rdkit import Chem
 
 def canonicalize_smiles(smiles):
-    if not isinstance(smiles, str):
-        return None
     smiles = smiles.strip()
     if not smiles:
         return None
@@ -36,9 +59,6 @@ def load_data(path):
     })
 
     df = df[["drug_id", "drug_name", "smiles"]].copy()
-
-    original_n = len(df)
-
     df["canonical_smiles"] = df["smiles"].apply(canonicalize_smiles)
 
     valid_df = df[df["canonical_smiles"].notna()].copy()
@@ -46,9 +66,6 @@ def load_data(path):
     valid_df["smiles"] = valid_df["canonical_smiles"]
     valid_df = valid_df.drop(columns=["canonical_smiles"])
     valid_df = valid_df.drop_duplicates(subset=["drug_id"]).reset_index(drop=True)
-
-    print(f"[info] Original drugs in CSV: {original_n}")
-    print(f"[info] Valid drugs remaining: {len(valid_df)}")
 
     return valid_df
 

@@ -1,39 +1,43 @@
 """
-analyse_predictions.py
------------------------
-Analyses FDA drug repositioning predictions from the RF model.
+Comprehensive analysis of FDA drug repositioning predictions from a Random Forest
+model trained on drug-target interactions for Parkinson's Disease (PD). Validates
+predictions against known PD drugs from ChEMBL and identifies novel high-confidence
+repositioning candidates.
 
-Reads target names from pd_targets_metadata.csv and known PD drugs
-from pd_indications.csv (ChEMBL EFO ontology query — structured source).
+Key functionality:
+  - Load and rank model predictions (drug-target pair scores)
+  - Resolve target IDs to human-readable names from metadata
+  - Load known PD-indicated drugs from ChEMBL EFO ontology query results
+  - Flag predictions matching known PD drugs (validation of model quality)
+  - Perform four complementary analyses:
+    1. Target distribution — identify over-predicted targets (memorisation risk)
+    2. Score distribution — compare scores for novel vs known PD drug pairs
+    3. Known PD drug validation — check if model recovers known associations
+    4. Novel candidates — extract high-confidence repositioning predictions
 
-Usage:
-    python src/evaluation/analyse_predictions.py \
-        --scores_csv          artifacts/rf_cv/fda_target_scores_all.csv \
-        --targets_metadata    data/raw/pd_targets_metadata.csv \
-        --pd_indications_csv  data/raw/pd_indications.csv \
-        --out_dir             artifacts/rf_cv/prediction_analysis_all \
-        --high_conf_threshold 0.9 \
-        --memorisation_target "Glucocorticoid receptor"
+Output:
+  - PNG visualizations: target distribution, score histograms with novel/known split
+  - CSV files: known PD hits, best scores per drug, all novel candidates,
+    high-confidence subset (with/without memorisation target exclusion),
+    top 25 ranked novel candidates
+  - JSON summary: overall statistics and threshold parameters
+
+Dependencies:
+  - pandas, numpy: Data manipulation and analysis
+  - matplotlib: Visualization
+  - requests: ChEMBL API access for drug name resolution
 """
 
 from __future__ import annotations
 import argparse, json, time
 from pathlib import Path
 import matplotlib.pyplot as plt
-import matplotlib.ticker as mticker
 import numpy as np
 import pandas as pd
 
 
-# ---------------------------------------------------------------------------
-# Loaders
-# ---------------------------------------------------------------------------
-
 def load_scores(path: Path) -> pd.DataFrame:
     df = pd.read_csv(path)
-    missing = {"drug_id", "target_id", "score"} - set(df.columns)
-    if missing:
-        raise ValueError(f"scores CSV missing columns: {missing}")
     return (df.sort_values("score", ascending=False)
               .reset_index(drop=True)
               .assign(rank=lambda d: d.index + 1))
@@ -44,32 +48,17 @@ def load_target_names(metadata_csv: Path) -> dict:
     df.columns = [c.lower().strip() for c in df.columns]
     id_col   = next((c for c in ["target_chembl_id", "target_id"] if c in df.columns), None)
     name_col = next((c for c in ["pref_name", "preferred_name", "name"] if c in df.columns), None)
-    if not id_col or not name_col:
-        raise ValueError(f"pd_targets_metadata.csv must have id+name cols. Found: {list(df.columns)}")
     mapping = dict(zip(df[id_col].astype(str), df[name_col].astype(str)))
-    print(f"  Loaded {len(mapping)} target names from {metadata_csv.name}")
     return mapping
 
 
 def load_known_pd_drugs(pd_indications_csv: Path) -> set:
-    """
-    Uses pd_indications.csv — saved by fetch_chembl_interactions.py from the
-    ChEMBL EFO ontology query (efo_term=parkinson). Resolves molecule ChEMBL
-    IDs to preferred drug names via the ChEMBL API, cached after first run.
-    """
     import requests
-
-    if not pd_indications_csv.exists():
-        print(f"  Warning: {pd_indications_csv} not found.")
-        return set()
 
     ind_df = pd.read_csv(pd_indications_csv)
     ind_df.columns = [c.lower().strip() for c in ind_df.columns]
     mol_id_col = next((c for c in ["molecule_chembl_id", "mol_chembl_id", "chembl_id"]
                        if c in ind_df.columns), None)
-    if mol_id_col is None:
-        print(f"  Warning: no molecule_chembl_id column. Cols: {list(ind_df.columns)}")
-        return set()
 
     mol_ids = ind_df[mol_id_col].dropna().unique().tolist()
     print(f"  pd_indications.csv: {len(mol_ids)} PD-indicated molecules")
@@ -77,9 +66,7 @@ def load_known_pd_drugs(pd_indications_csv: Path) -> set:
     cache_path = pd_indications_csv.parent / "pd_indication_names_cache.csv"
     if cache_path.exists():
         cache = pd.read_csv(cache_path)
-        print(f"  Name cache loaded ({len(cache)} entries)")
     else:
-        print("  Fetching names from ChEMBL API (one-time, will be cached)...")
         rows = []
         for i, mol_id in enumerate(mol_ids):
             try:
@@ -94,13 +81,11 @@ def load_known_pd_drugs(pd_indications_csv: Path) -> set:
             except Exception:
                 continue
             if (i + 1) % 20 == 0:
-                print(f"    {i+1}/{len(mol_ids)} fetched...")
+                print(f"    {i+1}/{len(mol_ids)} fetched")
         cache = pd.DataFrame(rows)
         cache.to_csv(cache_path, index=False)
-        print(f"  Cached {len(cache)} names to {cache_path.name}")
 
     known = set(cache["pref_name"].str.lower().str.strip().dropna().tolist())
-    print(f"  Known PD drugs resolved: {len(known)}")
     return known
 
 
@@ -114,12 +99,8 @@ def flag_known_pd(df: pd.DataFrame, known_pd: set) -> pd.DataFrame:
     return df
 
 
-# ---------------------------------------------------------------------------
-# Analysis 1 — Target distribution
-# ---------------------------------------------------------------------------
-
 def analyse_target_distribution(df: pd.DataFrame, out_dir: Path) -> None:
-    print("\n=== ANALYSIS 1 — Target Distribution ===")
+    print("\n ANALYSIS 1 — Target Distribution")
     counts = df["target_name"].value_counts()
     total  = len(df)
     for t, c in counts.items():
@@ -140,12 +121,8 @@ def analyse_target_distribution(df: pd.DataFrame, out_dir: Path) -> None:
     print(f"  [saved] 1_target_distribution.png")
 
 
-# ---------------------------------------------------------------------------
-# Analysis 2 — Score distribution histogram
-# ---------------------------------------------------------------------------
-
 def analyse_score_distribution(df: pd.DataFrame, threshold: float, out_dir: Path) -> None:
-    print(f"\n=== ANALYSIS 2 — Score Distribution ===")
+    print(f"\n ANALYSIS 2 — Score Distribution")
 
     scores = df["score"].values
     novel_scores  = df[~df["is_known_pd"]]["score"].values
@@ -164,10 +141,8 @@ def analyse_score_distribution(df: pd.DataFrame, threshold: float, out_dir: Path
     above = (scores >= threshold).sum()
     print(f"\n  Above threshold ({threshold}):  {above:,} pairs  ({above/len(scores)*100:.1f}%)")
 
-    # Plot
-    fig, axes = plt.subplots(1, 2, figsize=(14, 5))
 
-    # Left — full distribution split by known/novel
+    fig, axes = plt.subplots(1, 2, figsize=(14, 5))
     bins = np.linspace(0, 1, 40)
     axes[0].hist(novel_scores, bins=bins, alpha=0.65, color="#2980b9",
                  label=f"Novel candidates ({len(novel_scores):,})")
@@ -180,7 +155,6 @@ def analyse_score_distribution(df: pd.DataFrame, threshold: float, out_dir: Path
     axes[0].set_title("Score Distribution: Novel vs Known PD Drugs")
     axes[0].legend(fontsize=9)
 
-    # Right — zoom into high-confidence region (> 0.7)
     high_novel = novel_scores[novel_scores >= 0.7]
     high_known = known_scores[known_scores >= 0.7]
     bins_zoom  = np.linspace(0.7, 1.0, 25)
@@ -201,16 +175,11 @@ def analyse_score_distribution(df: pd.DataFrame, threshold: float, out_dir: Path
     print(f"  [saved] 2_score_distribution.png")
 
 
-# ---------------------------------------------------------------------------
-# Analysis 3 — Known PD drug validation
-# ---------------------------------------------------------------------------
-
 def analyse_known_pd_drugs(df: pd.DataFrame, out_dir: Path) -> pd.DataFrame:
-    print("\n=== ANALYSIS 3 — Known PD Drug Validation ===")
+    print("\n ANALYSIS 3 — Known PD Drug Validation")
     name_col = "drug_name" if "drug_name" in df.columns else "drug_id"
     hits = df[df["is_known_pd"]].copy()
 
-    # Best prediction per known PD drug (highest score across all targets)
     best = (hits.sort_values("score", ascending=False)
                 .drop_duplicates(subset=["drug_id"])
                 .reset_index(drop=True))
@@ -234,36 +203,28 @@ def analyse_known_pd_drugs(df: pd.DataFrame, out_dir: Path) -> pd.DataFrame:
     return hits
 
 
-# ---------------------------------------------------------------------------
-# Analysis 4 — Novel high-confidence candidates
-# ---------------------------------------------------------------------------
-
 def analyse_novel_candidates(
     df: pd.DataFrame,
     threshold: float,
     memorisation_target: str,
     out_dir: Path
 ) -> pd.DataFrame:
-    print(f"\n=== ANALYSIS 4 — Novel Repositioning Candidates (score ≥ {threshold}) ===")
+    print(f"\n ANALYSIS 4 — Novel Repositioning Candidates (score ≥ {threshold}) ")
     name_col = "drug_name" if "drug_name" in df.columns else "drug_id"
 
-    # All novel pairs
     novel = df[~df["is_known_pd"]].copy()
 
-    # High-confidence subset, excluding the memorisation target
     high_conf = novel[
         (novel["score"] >= threshold) &
         (novel["target_name"] != memorisation_target)
     ].copy()
 
-    # Also save high-confidence INCLUDING memorisation target, for completeness
     high_conf_all = novel[novel["score"] >= threshold].copy()
 
     print(f"  Novel pairs total:                    {len(novel):,}")
     print(f"  Novel pairs score ≥ {threshold}:             {len(high_conf_all):,}")
     print(f"  Novel pairs score ≥ {threshold}, excl. GR:   {len(high_conf):,}")
 
-    # Top 25 — one per drug, best target (excluding memorisation target)
     top25 = (high_conf.sort_values("score", ascending=False)
              .drop_duplicates(subset=["drug_id"])
              .head(25)
@@ -279,16 +240,8 @@ def analyse_novel_candidates(
     high_conf_all.to_csv(out_dir / "4_novel_high_confidence.csv", index=False)
     high_conf.to_csv(out_dir / "4_novel_high_confidence_excl_gr.csv", index=False)
     top25.to_csv(out_dir / "4_top25_novel_candidates.csv", index=False)
-    print(f"\n  [saved] 4_novel_candidates_all.csv")
-    print(f"  [saved] 4_novel_high_confidence.csv          ({len(high_conf_all):,} pairs)")
-    print(f"  [saved] 4_novel_high_confidence_excl_gr.csv  ({len(high_conf):,} pairs)")
-    print(f"  [saved] 4_top25_novel_candidates.csv")
     return top25
 
-
-# ---------------------------------------------------------------------------
-# Main
-# ---------------------------------------------------------------------------
 
 def main():
     parser = argparse.ArgumentParser()
@@ -303,23 +256,14 @@ def main():
     args = parser.parse_args()
     args.out_dir.mkdir(parents=True, exist_ok=True)
 
-    # Load
     df = load_scores(args.scores_csv)
-    print(f"Loaded {len(df):,} predictions  |  {df['target_id'].nunique()} targets  |  {df['drug_id'].nunique()} drugs")
 
-    # Resolve names
-    print("\n[1/2] Resolving target names...")
     tmap = load_target_names(args.targets_metadata)
     df["target_name"] = df["target_id"].map(tmap).fillna(df["target_id"])
-    missing = df[df["target_name"] == df["target_id"]]["target_id"].unique()
-    if len(missing):
-        print(f"  Warning: {len(missing)} targets not in metadata: {missing}")
 
-    print("\n[2/2] Loading known PD drugs...")
     known_pd = load_known_pd_drugs(args.pd_indications_csv)
     df = flag_known_pd(df, known_pd)
 
-    # Run analyses
     analyse_target_distribution(df, args.out_dir)
     analyse_score_distribution(df, args.high_conf_threshold, args.out_dir)
     hits  = analyse_known_pd_drugs(df, args.out_dir)
