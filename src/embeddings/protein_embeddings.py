@@ -4,14 +4,39 @@ import numpy as np
 import pandas as pd
 from Bio import SeqIO
 
+"""
+This module generates protein sequence embeddings using ESM2 (Evolutionary Scale
+Modeling). 
+It processes FASTA files containing protein sequences, generates dense vector embeddings,
+and stores metadata about the embedding process for reproducibility.
+
+Key functionality:
+  - Load protein sequences from FASTA files in a directory
+  - Infer target IDs from filename conventions
+  - Generate embeddings using Facebook's ESM2 transformer models
+  - Apply mean pooling over residue tokens while excluding special tokens
+  - Optionally normalize embeddings to unit length
+  - Handle variable-length sequences with configurable truncation
+  - Support for Hugging Face authentication tokens
+
+Dependencies:
+  - biopython: FASTA file parsing
+  - transformers: ESM2 models and tokenization
+  - torch: GPU acceleration support
+  - pandas, numpy: Data handling
+
+Output:
+  Saves embeddings to CSV with target IDs, sequences, embedding vectors
+  (target_emb_0 through target_emb_479 for 480-dim ESM2), model name,
+  pooling method, and normalization status for full reproducibility.
+"""
+
 def infer_target_id_from_filename(path_obj: Path) -> str:
     stem = path_obj.stem
     return stem.split("_")[0] if "_" in stem else stem
 
 def load_fasta_sequences(fasta_dir: Path) -> pd.DataFrame:
     fasta_files = sorted(list(fasta_dir.glob("*.fasta")) + list(fasta_dir.glob("*.fa")))
-    if not fasta_files:
-        raise FileNotFoundError(f"No FASTA files found in {fasta_dir}")
 
     rows = []
     for fasta_file in fasta_files:
@@ -35,10 +60,6 @@ def load_fasta_sequences(fasta_dir: Path) -> pd.DataFrame:
                 "source_file": fasta_file.name,
             }
         )
-
-    if not rows:
-        raise ValueError(f"No valid protein sequences could be read from {fasta_dir}")
-
     return pd.DataFrame(rows).drop_duplicates(subset=["target_id"]).reset_index(drop=True)
 
 
@@ -50,11 +71,6 @@ def esm_mean_pooled_embeddings(
     normalize: bool = True,
     hf_token: str | None = None,
 ):
-    """
-    Generate one embedding per protein sequence using an ESM model.
-    Pooling strategy: mean pooling over residue token embeddings, excluding
-    special tokens and padding.
-    """
     try:
         import torch
         import torch.nn.functional as F
@@ -66,7 +82,6 @@ def esm_mean_pooled_embeddings(
         ) from exc
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
-    print(f"[info] Loading ESM model")
 
     tokenizer = AutoTokenizer.from_pretrained(model_name, token=hf_token)
     model = AutoModel.from_pretrained(model_name, token=hf_token).to(device)
@@ -93,7 +108,6 @@ def esm_mean_pooled_embeddings(
 
             attention_mask = toks["attention_mask"].clone()
 
-            # Exclude BOS/EOS when present by masking first and last valid positions
             for row_idx in range(attention_mask.shape[0]):
                 valid_positions = torch.where(attention_mask[row_idx] == 1)[0]
                 if len(valid_positions) >= 2:
@@ -155,7 +169,7 @@ def generate_protein_embeddings(
 def main():
     project_root = Path(__file__).resolve().parents[2]
     parser = argparse.ArgumentParser(
-        description="Generate protein embeddings from FASTA files using ESM mean pooling."
+        description="Generate protein embeddings from FASTA files using ESM2."
     )
     parser.add_argument(
         "--fasta_dir",

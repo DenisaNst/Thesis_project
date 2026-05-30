@@ -1,18 +1,40 @@
 """
-prepare_saliency_candidates.py
--------------------------------
-Maps RF high-confidence FDA drug predictions (from BOTH ESM2 and DRKG
-inference models) to DRKG node indices, producing three prioritised
-candidate lists for GNN saliency map analysis.
+Prepares high-confidence drug-target repositioning candidates for saliency map
+generation. Combines predictions from two independent GNN models (ESM2-based and
+DRKG-based), prioritizes consensus predictions, and maps all candidates to DRKG
+graph node indices for interpretability analysis.
 
-Output candidate lists:
-  1. BOTH models agree (score >= threshold in both)  <- highest priority
-  2. ESM2 only high confidence
-  3. DRKG only high confidence
+Key workflow:
+  1. Load RF model predictions from both ESM2 and DRKG inference pipelines
+  2. Filter by confidence threshold (default: 0.9)
+  3. Identify cross-model agreement: pairs predicted by both models, ESM2-only,
+     and DRKG-only predictions
+  4. Load DRKG knowledge graph and map drug-target pairs to node indices
+  5. Generate saliency map candidates with node indices for graph attribution
+  6. Output four prioritized candidate sets
+
+Candidate prioritization:
+  - "both": Highest priority — both models independently predict interaction.
+    Score = average of ESM2 and DRKG scores. Best candidates for saliency maps.
+  - "esm2_only": ESM2 predictions not validated by DRKG
+  - "drkg_only": DRKG predictions not validated by ESM2
+  - "all": Combined set of all candidates above threshold
+
+Dependencies:
+  - pandas: Data manipulation and merging
+  - build_drkg: DRKG graph construction and node indexing
+  - Path resolution via PROJECT_ROOT for data access
+
+Output files:
+  - saliency_candidates_both.csv: START HERE for saliency map generation
+  - saliency_candidates_esm2only.csv
+  - saliency_candidates_drkgonly.csv
+  - saliency_candidates_all.csv
 
 Usage:
-    python src/gnn_final/prepare_saliency_candidates.py
-    python src/gnn_final/prepare_saliency_candidates.py --threshold 0.85
+  python src/gnn_final/saliency_candidates.py --threshold 0.9
+  candidates = prepare_candidates(threshold=0.9)
+  # Use candidates["both"] for saliency visualization
 """
 
 from __future__ import annotations
@@ -25,7 +47,7 @@ import pandas as pd
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
 
-from build_drkg3 import build_pd_drkg_graph, PRED_SRC, PRED_DST
+from build_drkg import build_pd_drkg_graph, PRED_SRC, PRED_DST
 
 RF_ESM2   = PROJECT_ROOT / "artifacts" / "rf_inference_esm2" / "fda_target_scores_all.csv"
 RF_DRKG   = PROJECT_ROOT / "artifacts" / "rf_inference_drkg" / "fda_target_scores_all.csv"
@@ -35,11 +57,6 @@ OUT_DIR   = PROJECT_ROOT / "artifacts" / "gnn_v2"
 
 
 def _map_to_drkg(df, comp_map, gene_map, chembl_to_drkg, target_names):
-    """
-    Map a scored DataFrame to DRKG node indices.
-    Input df must have columns: drug_id, drug_name, target_id, score
-    Returns only rows where both drug and target exist in DRKG.
-    """
     rows = []
     for _, row in df.iterrows():
         drug_id    = str(row["drug_id"])
@@ -47,7 +64,6 @@ def _map_to_drkg(df, comp_map, gene_map, chembl_to_drkg, target_names):
         target_id  = str(row["target_id"])
         score      = float(row["score"])
 
-        # DRKG stores DrugBank compounds as Compound::DBXXXXX (no DrugBank:: prefix)
         drkg_drug   = f"Compound::{drug_id}"
         drkg_target = chembl_to_drkg.get(target_id)
         tname       = target_names.get(target_id, target_id)
@@ -64,23 +80,11 @@ def _map_to_drkg(df, comp_map, gene_map, chembl_to_drkg, target_names):
                 "target_node_idx": gene_map[drkg_target],
                 "score":           score,
             })
-
-    if not rows:
-        return pd.DataFrame()
     return pd.DataFrame(rows).sort_values(
         "score", ascending=False).reset_index(drop=True)
 
 
 def prepare_candidates(threshold: float = 0.9) -> dict[str, pd.DataFrame]:
-
-    print(f"\n{'='*55}")
-    print(f"  Saliency Candidate Preparation")
-    print(f"  Score threshold : {threshold}")
-    print(f"{'='*55}")
-
-    # ------------------------------------------------------------------
-    # 1. Load RF scores and apply threshold
-    # ------------------------------------------------------------------
     esm2_all = pd.read_csv(RF_ESM2)
     drkg_all = pd.read_csv(RF_DRKG)
 
@@ -92,9 +96,6 @@ def prepare_candidates(threshold: float = 0.9) -> dict[str, pd.DataFrame]:
     print(f"  DRKG: {len(drkg_high):,} pairs >= {threshold} "
           f"({drkg_high['drug_id'].nunique():,} unique drugs)")
 
-    # ------------------------------------------------------------------
-    # 2. Cross-model overlap
-    # ------------------------------------------------------------------
     esm2_pairs = set(zip(esm2_high["drug_id"], esm2_high["target_id"]))
     drkg_pairs = set(zip(drkg_high["drug_id"], drkg_high["target_id"]))
 
@@ -107,10 +108,6 @@ def prepare_candidates(threshold: float = 0.9) -> dict[str, pd.DataFrame]:
     print(f"    ESM2 only:         {len(esm2_only_pairs):,} pairs")
     print(f"    DRKG only:         {len(drkg_only_pairs):,} pairs")
 
-    # ------------------------------------------------------------------
-    # 3. Load DRKG graph and target mappings
-    # ------------------------------------------------------------------
-    print(f"\n  Loading DRKG graph ...")
     data, node_to_idx, idx_to_node, _, _ = build_pd_drkg_graph()
     comp_map = node_to_idx[PRED_SRC]
     gene_map = node_to_idx[PRED_DST]
@@ -123,17 +120,6 @@ def prepare_candidates(threshold: float = 0.9) -> dict[str, pd.DataFrame]:
         meta = pd.read_csv(TARG_META)
         if "target_chembl_id" in meta.columns and "pref_name" in meta.columns:
             target_names = dict(zip(meta["target_chembl_id"], meta["pref_name"]))
-
-    print(f"  Compound nodes:  {len(comp_map):,}")
-    print(f"  Gene nodes:      {len(gene_map):,}")
-    print(f"  Target mappings: {len(chembl_to_drkg):,}")
-
-    # ------------------------------------------------------------------
-    # 4. Build candidate DataFrames (each with clean drug_id, drug_name,
-    #    target_id, score columns before mapping)
-    # ------------------------------------------------------------------
-
-    # BOTH — average of ESM2 and DRKG scores
     esm2_both = esm2_high[
         esm2_high.apply(
             lambda r: (r["drug_id"], r["target_id"]) in both_pairs, axis=1)
@@ -161,10 +147,7 @@ def prepare_candidates(threshold: float = 0.9) -> dict[str, pd.DataFrame]:
             lambda r: (r["drug_id"], r["target_id"]) in drkg_only_pairs, axis=1)
     ][["drug_id", "drug_name", "target_id", "score"]].copy()
 
-    # ------------------------------------------------------------------
-    # 5. Map each group to DRKG nodes
-    # ------------------------------------------------------------------
-    print(f"\n  Mapping to DRKG nodes ...")
+
     cands_both     = _map_to_drkg(both_df,     comp_map, gene_map,
                                   chembl_to_drkg, target_names)
     cands_esm2only = _map_to_drkg(esm2_only_df, comp_map, gene_map,
@@ -172,7 +155,6 @@ def prepare_candidates(threshold: float = 0.9) -> dict[str, pd.DataFrame]:
     cands_drkgonly = _map_to_drkg(drkg_only_df, comp_map, gene_map,
                                   chembl_to_drkg, target_names)
 
-    # Add metadata columns
     if len(cands_both) > 0:
         cands_both["source"] = "both"
         lu = both_df.set_index(["drug_id", "target_id"])
@@ -189,10 +171,7 @@ def prepare_candidates(threshold: float = 0.9) -> dict[str, pd.DataFrame]:
         [cands_both, cands_esm2only, cands_drkgonly],
         ignore_index=True)
 
-    # ------------------------------------------------------------------
-    # 6. Summary
-    # ------------------------------------------------------------------
-    print(f"\n{'='*55}")
+
     print(f"  DRKG-mappable candidates")
     print(f"{'='*55}")
     print(f"  Both models agree: {len(cands_both):,}  <- use for saliency first")
@@ -215,20 +194,12 @@ def prepare_candidates(threshold: float = 0.9) -> dict[str, pd.DataFrame]:
         for _, r in tgt.sort_values("n", ascending=False).iterrows():
             print(f"    {r['target_name']:<40} {r['n']:>4} candidates")
 
-    # ------------------------------------------------------------------
-    # 7. Save
-    # ------------------------------------------------------------------
+
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     cands_both.to_csv(    OUT_DIR / "saliency_candidates_both.csv",     index=False)
     cands_esm2only.to_csv(OUT_DIR / "saliency_candidates_esm2only.csv", index=False)
     cands_drkgonly.to_csv(OUT_DIR / "saliency_candidates_drkgonly.csv", index=False)
     all_cands.to_csv(     OUT_DIR / "saliency_candidates_all.csv",      index=False)
-
-    print(f"\n  Saved to {OUT_DIR}/")
-    print(f"    saliency_candidates_both.csv    <- start here for saliency maps")
-    print(f"    saliency_candidates_esm2only.csv")
-    print(f"    saliency_candidates_drkgonly.csv")
-    print(f"    saliency_candidates_all.csv")
 
     return {
         "both":      cands_both,
@@ -248,5 +219,3 @@ if __name__ == "__main__":
     args       = _parse_args()
     candidates = prepare_candidates(args.threshold)
     both       = candidates["both"]
-    print(f"\n  Ready: {len(both)} high-priority candidates mapped to DRKG")
-    print(f"  Load with: pd.read_csv('artifacts/gnn_v2/saliency_candidates_both.csv')")
