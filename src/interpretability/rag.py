@@ -1,13 +1,28 @@
 """
-rag.py
--------
-Scientific RAG via PubMed for the Parkinson's Drug Discovery Framework.
+This is a deterministic version of RAG, which I ended up not using.
 
-Retrieves and summarises literature evidence for a given (drug, symptom) pair
-using NCBI E-utilities (no API key required, but recommended for higher rate limits).
+Retrieval-Augmented Generation (RAG) pipeline via PubMed for the Parkinson's
+Drug Discovery Framework. Interrogates the NCBI E-utilities API to retrieve,
+parse, and format peer-reviewed literature evidence for specific (drug, symptom)
+relationships in the context of Parkinson's disease.
+
+Key functionality:
+  - Construct targeted Boolean queries bounding searches specifically to Parkinson's disease
+  - Query PubMed (via esearch) to retrieve top relevant article PMIDs
+  - Extract article metadata (via esummary) including titles, dates, and journal sources
+  - Batch retrieve and parse full abstract text (via efetch and XML parsing)
+  - Format retrieved context into clean, token-efficient justification strings for LLM injection
+
+Output:
+  - Structured list of dictionaries containing article PMIDs, metadata, and full abstracts
+  - Formatted text justification string containing citations and truncated abstract
+    snippets (optimized for LLM context windows and prompt injection)
+
+Dependencies:
+  - requests: NCBI E-utilities API communication
+  - xml.etree.ElementTree: Parsing batched XML responses for abstract extraction
 
 Usage
------
     from src.interpretability.rag import ScientificRAG
 
     rag = ScientificRAG(email="you@example.com")
@@ -32,9 +47,6 @@ class ScientificRAG:
         self.email   = email
         self.api_key = api_key
 
-    # ------------------------------------------------------------------
-    # Private helpers
-    # ------------------------------------------------------------------
 
     def _base_params(self) -> dict:
         params = {"retmode": "json"}
@@ -99,16 +111,8 @@ class ScientificRAG:
             abstract_map[pmid] = " ".join(p for p in parts if p)
         return abstract_map
 
-    # ------------------------------------------------------------------
-    # Public API
-    # ------------------------------------------------------------------
 
     def query_pubmed(self, drug_name: str, symptom: str, top_k: int = 5) -> list[dict]:
-        """
-        Searches PubMed for articles linking drug_name, Parkinson's disease,
-        and a specific symptom. Returns a list of article dicts with keys:
-        pmid, title, pubdate, source, abstract.
-        """
         query = f"({drug_name}) AND (Parkinson disease) AND ({symptom})"
         print(f"[PubMed] {query}")
 
@@ -128,9 +132,6 @@ class ScientificRAG:
     def generate_justification(
         self, drug_name: str, symptom: str, articles: list[dict], max_items: int = 3
     ) -> str:
-        """
-        Formats retrieved articles into a human-readable justification string.
-        """
         if not articles:
             return "No PubMed evidence returned for this query."
 

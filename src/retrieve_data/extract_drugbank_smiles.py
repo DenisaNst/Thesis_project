@@ -1,6 +1,18 @@
+"""
+How this script works:
+1. Streaming XML Parsing: The DrugBank database is a massive XML file. Instead of
+   loading the entire file into RAM (which would crash most computers), it uses
+   `iterparse` to read the file element-by-element.
+2. Status Filtering: It checks the metadata of every drug and only keeps those
+   tagged explicitly as "approved" (i.e., FDA-approved drugs safe for human use).
+3. Chemical Extraction: For each approved drug, it digs into the calculated
+   properties to extract the SMILES string (the 1D text representation of the
+   molecule's 3D structure).
+4. Export: Saves the DrugBank ID, Name, and SMILES to `fda_approved_drugs.csv`.
+"""
+
 import xml.etree.ElementTree as ET
 import pandas as pd
-import os
 from tqdm import tqdm
 from pathlib import Path
 
@@ -12,7 +24,6 @@ def parse_drugbank(xml_path, output_path):
     
     for event, elem in tqdm(context, desc="Processing drugs"):
         if elem.tag == '{http://www.drugbank.ca}drug':
-            # Check if FDA approved
             groups = [g.text for g in elem.findall('db:groups/db:group', ns)]
             
             if 'approved' in groups:
@@ -47,5 +58,3 @@ if __name__ == "__main__":
         parse_drugbank(str(xml_file), str(output_file))
     elif (project_root / "full database.xml").exists():
         parse_drugbank(str(project_root / "full database.xml"), str(output_file))
-    else:
-        print(f"File not found: {xml_file}")

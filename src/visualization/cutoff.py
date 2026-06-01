@@ -1,25 +1,31 @@
 """
-plot_cutoff_sensitivity.py
---------------------------
-Generates a sensitivity analysis plot showing test AUC and overfitting gap
-across all time-slice cutoff years (1995-2022).
+Time-Slice Cutoff Sensitivity Analysis Plotter.
 
-Run from your project root:
-    python src/visualisation/plot_cutoff_sensitivity.py
+How this script works mechanically:
+1. Metric Loading: Loads a pre-computed dictionary of evaluation metrics (Train/Test
+   sizes and AUC scores) for every temporal cutoff year between 1995 and 2022.
+   These results were copied from artifacts.
+2. Data Extraction: Unpacks the dictionary into temporal arrays (years, test_aucs,
+   train_aucs, gaps, train_rows, test_rows) for plotting.
+3. Figure Initialization: Sets up a vertically stacked, 3-panel Matplotlib figure.
+4. Panel 1 (Predictive Performance): Plots the Train AUC vs. Test AUC over time,
+   highlighting the chosen 2018 cutoff and shading the unreliable post-2020 zone.
+5. Panel 2 (Overfitting Gap): Plots the mathematical difference between the Train
+   and Test AUC to visualize how structural memorization changes as the test set shrinks.
+6. Panel 3 (Data Volume): Plots the raw number of training vs. testing pairs available
+   at each temporal cutoff.
+7. Export: Renders and saves the final composite image to the reports directory.
 """
 
-import json
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
-import numpy as np
 from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 OUT_DIR = PROJECT_ROOT / "reports" / "figures"
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 
-# All results from the sensitivity analysis
 RESULTS = {
     1995: {"train": 2115,  "test": 94658, "train_auc": 1.0000, "test_auc": 0.5860},
     1996: {"train": 2980,  "test": 93793, "train_auc": 1.0000, "test_auc": 0.5725},
@@ -72,7 +78,7 @@ fig.suptitle(
     fontsize=14, fontweight="bold", y=0.98,
 )
 
-# ── Panel 1: Train vs Test AUC ──────────────────────────────────────────────
+# Panel 1
 ax1 = axes[0]
 ax1.set_facecolor(BG)
 ax1.plot(years, train_aucs, color=BLUE,   linewidth=2.5,
@@ -89,7 +95,6 @@ ax1.annotate(
     arrowprops=dict(arrowstyle="->", color=RED, lw=1.5),
 )
 
-# Shade unreliable zone (small test set)
 ax1.axvspan(2020, 2023, alpha=0.08, color=RED,
             label="Unreliable (test < 6k rows)")
 ax1.text(2020.3, 0.58, "Small\ntest set\n(unreliable)", fontsize=8,
@@ -103,7 +108,7 @@ ax1.set_axisbelow(True)
 ax1.tick_params(labelbottom=False)
 ax1.set_title("Train vs Test AUC by Cutoff Year", fontsize=12, pad=8)
 
-# ── Panel 2: Overfitting gap ─────────────────────────────────────────────────
+# Panel 2
 ax2 = axes[1]
 ax2.set_facecolor(BG)
 ax2.fill_between(years, gaps, alpha=0.3, color=RED)
@@ -118,7 +123,7 @@ ax2.set_axisbelow(True)
 ax2.tick_params(labelbottom=False)
 ax2.set_title("Overfitting Gap by Cutoff Year", fontsize=12, pad=8)
 
-# ── Panel 3: Train/Test size ─────────────────────────────────────────────────
+# Panel 3
 ax3 = axes[2]
 ax3.set_facecolor(BG)
 ax3.fill_between(years, train_rows, alpha=0.4, color=BLUE, label="Train rows")

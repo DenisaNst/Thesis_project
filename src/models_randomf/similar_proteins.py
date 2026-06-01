@@ -1,16 +1,25 @@
+"""
+How this script works:
+1. Alignment: Loads both the sequence-based (ESM2) and topology-based (DRKG)
+   embeddings and aligns them so they contain the exact same Parkinson's targets
+   in the exact same order.
+2. Cosine Similarity: Computes the dot product of the normalized matrices, which
+   mathematically yields the pairwise cosine similarity for every target against
+   every other target.
+3. Cross-Reference Analysis: Scans the similarity matrices to identify targets that
+   DRKG considers highly similar and checks if ESM2 agrees, and vice-versa.
+
+"""
+
 import pandas as pd
-import numpy as np
 from sklearn.preprocessing import normalize
-from scipy.stats import pearsonr
 from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 
-# Load both embeddings
 esm2 = pd.read_csv(f"{PROJECT_ROOT}/data/processed/protein_embeddings.csv")
 drkg = pd.read_csv(f"{PROJECT_ROOT}/data/processed/drkg_target_embeddings.csv")
 
-# Align to common targets
 common = sorted(set(esm2["target_id"]) & set(drkg["target_id"]))
 esm2 = esm2[esm2["target_id"].isin(common)].sort_values("target_id")
 drkg = drkg[drkg["target_id"].isin(common)].sort_values("target_id")
@@ -31,7 +40,6 @@ n   = len(ids)
 # and check what ESM2 says about the same pairs
 print("Pairs where DRKG similarity > 0.7:")
 print(f"{'Target 1':<20} {'Target 2':<20} {'DRKG sim':>10} {'ESM2 sim':>10} {'Agree?':>8}")
-print("-" * 70)
 
 agreements = []
 for i in range(n):
@@ -46,7 +54,7 @@ for i in range(n):
 print(f"\nAgreement rate: {sum(1 for _,_,a in agreements if a=='YES')}/{len(agreements)}")
 print("\nPairs where ESM2 similarity > 0.98 (nearly identical):")
 print(f"{'Target 1':<20} {'Target 2':<20} {'ESM2 sim':>10} {'DRKG sim':>10}")
-print("-" * 60)
+
 for i in range(n):
     for j in range(i+1, n):
         if esm2_sim[i,j] > 0.98:

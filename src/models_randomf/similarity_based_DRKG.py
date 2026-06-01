@@ -1,25 +1,6 @@
 """
-similarity_based_partitioning.py
----------------------------------
-Implements the similarity-based training benchmark from:
-  Yang & Dumontier (2024) "Creating a Robust Training Benchmark
-  for Drug-Target Interaction Predictions"
-  Maastricht University
-
-Method:
-  1. Split interactions by time (cutoff 2018) for temporal validity
-  2. Compute drug-drug Tanimoto similarity (Morgan fingerprints)
-  3. Compute protein-protein cosine similarity (ESM2 embeddings)
-  4. For each threshold combination, remove training pairs where:
-     drug similarity to ANY test drug > drug_threshold
-     OR protein similarity to ANY test protein > prot_threshold
-  5. Train RF on filtered training set, evaluate on same test set
-  6. Plot AUC vs dataset reduction (Pareto analysis like the paper)
-
-This directly responds to supervisor feedback pointing to Yang & Dumontier.
-
-Run from project root:
-    python src/models_randomf/similarity_based_DRKG.py
+This script is similar to similarity_based.py, but instead of using ESM2,
+is using DRKG TransE embeddings.
 """
 
 from __future__ import annotations
@@ -56,13 +37,7 @@ OUT_DIR.mkdir(parents=True, exist_ok=True)
 FIG_DIR.mkdir(parents=True, exist_ok=True)
 
 
-# ---------------------------------------------------------------------------
-# Step 1 — Load data
-# ---------------------------------------------------------------------------
-
 def load_data():
-    print("[1/5] Loading interactions and embeddings...")
-
     interactions = eval_protocol.load_and_standardize_interactions(
         str(PROJECT_ROOT / "data/raw/chembl_pd_interactions.csv")
     )
@@ -71,18 +46,14 @@ def load_data():
     train_int = interactions[interactions["year"] <= CUTOFF].copy()
     test_int = interactions[interactions["year"] > CUTOFF].copy()
 
-    # Drug embeddings (ChemBERTa — for feature matrix)
     drug_emb = pd.read_csv(
         PROJECT_ROOT / "data/processed/chembl_drug_embeddings.csv"
     ).rename(columns={"molecule_chembl_id": "drug_id"})
 
-    # Protein embeddings (ESM2 — for similarity + feature matrix)
     prot_emb = pd.read_csv(
         PROJECT_ROOT / "data/processed/drkg_target_embeddings.csv"
     )
 
-    # SMILES for drug-drug Tanimoto similarity
-    # NOTE: protein embeddings switched to DRKG TransE for comparison
     smiles_df = pd.read_csv(
         PROJECT_ROOT / "data/raw/pd_molecule_smiles.csv"
     ).rename(columns={"molecule_chembl_id": "drug_id"})
@@ -90,18 +61,7 @@ def load_data():
     return train_int, test_int, drug_emb, prot_emb, smiles_df
 
 
-# ---------------------------------------------------------------------------
-# Step 2 — Drug-drug Tanimoto similarity
-# ---------------------------------------------------------------------------
-
 def compute_drug_similarity(train_drug_ids, test_drug_ids, smiles_df):
-    """
-    Computes max Tanimoto similarity between each training drug
-    and all test drugs using Morgan fingerprints (radius=2, 2048 bits).
-    Returns dict {drug_id: max_similarity_to_any_test_drug}
-    """
-    print("[2/5] Computing drug-drug Tanimoto similarities...")
-
     try:
         from rdkit import Chem
         from rdkit.Chem import AllChem, DataStructs
@@ -112,14 +72,9 @@ def compute_drug_similarity(train_drug_ids, test_drug_ids, smiles_df):
 
     def get_fp(drug_id):
         smi = smiles_map.get(drug_id)
-        if not smi:
-            return None
         mol = Chem.MolFromSmiles(smi)
-        if mol is None:
-            return None
         return AllChem.GetMorganFingerprintAsBitVect(mol, 2, nBits=2048)
 
-    # Build test fingerprints
     test_fps = []
     valid_test = []
     for did in test_drug_ids:
@@ -129,42 +84,27 @@ def compute_drug_similarity(train_drug_ids, test_drug_ids, smiles_df):
             valid_test.append(did)
     print(f"  Test drugs with valid fingerprints: {len(valid_test):,}")
 
-    # For each training drug, compute max similarity to any test drug
     max_sim = {}
     n_train = len(train_drug_ids)
     for i, did in enumerate(train_drug_ids):
         if i % 5000 == 0:
-            print(f"  Processing training drug {i:,}/{n_train:,}...")
+            print(f"  Processing training drug {i:,}/{n_train:,}")
         fp = get_fp(did)
         if fp is None:
             max_sim[did] = 0.0
             continue
         sims = DataStructs.BulkTanimotoSimilarity(fp, test_fps)
         max_sim[did] = float(max(sims)) if sims else 0.0
-
-    print(f"  Drug similarity computed for {len(max_sim):,} training drugs")
     return max_sim
 
 
-# ---------------------------------------------------------------------------
-# Step 3 — Protein-protein cosine similarity
-# ---------------------------------------------------------------------------
-
 def compute_protein_similarity(train_target_ids, test_target_ids, prot_emb):
-    """
-    Computes max cosine similarity between each training protein
-    and all test proteins using ESM2 embeddings.
-    Returns dict {target_id: max_similarity_to_any_test_protein}
-    """
-    print("[3/5] Computing protein-protein cosine similarities...")
-
     emb_cols = [c for c in prot_emb.columns if c.startswith("target_emb_")]
     prot_map = {
         row["target_id"]: row[emb_cols].values.astype(np.float32)
         for _, row in prot_emb.iterrows()
     }
 
-    # Normalise embeddings for cosine similarity
     test_vecs = np.array([
         prot_map[t] for t in test_target_ids if t in prot_map
     ])
@@ -186,21 +126,14 @@ def compute_protein_similarity(train_target_ids, test_target_ids, prot_emb):
 
     print(f"  Protein similarity computed for {len(max_sim):,} training proteins")
 
-    # Print distribution
     sim_values = list(max_sim.values())
     print(f"  Max prot similarity: min={min(sim_values):.3f} "
           f"mean={np.mean(sim_values):.3f} "
           f"max={max(sim_values):.3f}")
-
     return max_sim
 
 
-# ---------------------------------------------------------------------------
-# Step 4 — Filter training set and train RF
-# ---------------------------------------------------------------------------
-
 def prepare_feature_matrix(interactions_df, drug_emb, prot_emb):
-    """Merges interactions with embeddings and returns X, y."""
     drug_cols = [c for c in drug_emb.columns if c.startswith("drug_emb_")]
     prot_cols = [c for c in prot_emb.columns if c.startswith("target_emb_")]
 
@@ -222,11 +155,6 @@ def run_experiment(
     drug_max_sim, prot_max_sim,
     drug_threshold, prot_threshold,
 ):
-    """
-    Filters training set by similarity thresholds,
-    trains RF, evaluates on test set.
-    Returns dict of metrics.
-    """
     # Filter training pairs
     filtered_train = train_int[
         (train_int["drug_id"].map(drug_max_sim).fillna(0) < drug_threshold) &
@@ -237,10 +165,6 @@ def run_experiment(
     filtered_n = len(filtered_train)
     reduction  = 1 - filtered_n / original_n
 
-    if filtered_n < 100 or filtered_train["label"].nunique() < 2:
-        return None
-
-    # Build feature matrices
     _, X_train, y_train, _ = prepare_feature_matrix(
         filtered_train, drug_emb, prot_emb
     )
@@ -248,10 +172,6 @@ def run_experiment(
         test_int, drug_emb, prot_emb
     )
 
-    if len(X_train) < 50 or len(X_test) < 10:
-        return None
-
-    # Train RF
     clf = RandomForestClassifier(
         n_estimators=200,
         max_depth=15,
@@ -280,30 +200,18 @@ def run_experiment(
     }
 
 
-# ---------------------------------------------------------------------------
-# Step 5 — Pareto analysis plot (same as Yang & Dumontier Fig 4)
-# ---------------------------------------------------------------------------
-
 def plot_pareto(results_df, baseline_auc):
-    """
-    Reproduces the Pareto analysis from Yang & Dumontier Fig 3-4.
-    X axis: delta AUC ROC (how much AUC dropped from no filtering)
-    Y axis: delta known pairs (% reduction in training pairs)
-    Color: distance to Pareto front
-    """
     fig, axes = plt.subplots(1, 2, figsize=(14, 6),
                               facecolor="#F8FAFC")
     fig.suptitle(
-        "Similarity-Based Partitioning with DRKG TransE — Pareto Analysis\n"
-        "(Following Yang & Dumontier, Maastricht University 2024)",
+        "Similarity-Based Partitioning with DRKG TransE — Pareto Analysis",
         fontsize=13, fontweight="bold",
     )
 
     df = results_df.copy()
     df["delta_auc"]   = baseline_auc - df["test_roc_auc"]
-    df["delta_pairs"] = df["train_reduction"] * 100  # as percentage
+    df["delta_pairs"] = df["train_reduction"] * 100
 
-    # ── Panel 1: AUC vs threshold ────────────────────────────────────────
     ax1 = axes[0]
     ax1.set_facecolor("#F8FAFC")
 
@@ -317,11 +225,9 @@ def plot_pareto(results_df, baseline_auc):
     )
     plt.colorbar(scatter, ax=ax1, label="Test ROC-AUC")
 
-    # Mark Pareto front — points where you can't improve both metrics
     ax1.axvline(x=0, color="gray", linewidth=1, linestyle="--", alpha=0.5)
     ax1.axhline(y=0, color="gray", linewidth=1, linestyle="--", alpha=0.5)
 
-    # Mark the no-filtering baseline
     ax1.scatter([0], [0], color="red", s=150, zorder=5,
                 label=f"No filtering (AUC={baseline_auc:.3f})")
 
@@ -332,7 +238,6 @@ def plot_pareto(results_df, baseline_auc):
     ax1.yaxis.grid(True, alpha=0.4)
     ax1.xaxis.grid(True, alpha=0.4)
 
-    # ── Panel 2: AUC vs data reduction line plot ─────────────────────────
     ax2 = axes[1]
     ax2.set_facecolor("#F8FAFC")
 
@@ -368,19 +273,11 @@ def plot_pareto(results_df, baseline_auc):
     print(f"  [saved] {out}")
 
 
-# ---------------------------------------------------------------------------
-# Main
-# ---------------------------------------------------------------------------
-
 def main():
-    print("=" * 60)
-    print("  Similarity-Based Partitioning with DRKG TransE (Yang & Dumontier 2024)")
-    print("=" * 60)
+    print("  Similarity-Based Partitioning with DRKG TransE ")
 
-    # Load
     train_int, test_int, drug_emb, prot_emb, smiles_df = load_data()
 
-    # Get unique drug and target IDs
     train_drugs   = train_int["drug_id"].unique().tolist()
     test_drugs    = test_int["drug_id"].unique().tolist()
     train_targets = train_int["target_id"].unique().tolist()
@@ -391,14 +288,11 @@ def main():
     print(f"  Unique train targets: {len(train_targets)}")
     print(f"  Unique test targets:  {len(test_targets)}")
 
-    # Compute similarities
     drug_max_sim = compute_drug_similarity(train_drugs, test_drugs, smiles_df)
     prot_max_sim = compute_protein_similarity(
         train_targets, test_targets, prot_emb
     )
 
-    # Get baseline (no filtering) AUC
-    print("\n[4/5] Running experiments across similarity thresholds...")
     _, X_train_full, y_train_full, _ = prepare_feature_matrix(
         train_int, drug_emb, prot_emb
     )
@@ -418,9 +312,6 @@ def main():
     print(f"\n  Baseline AUC (no filtering): {baseline_auc:.4f}")
     print(f"  Train pairs (no filtering):  {len(X_train_full):,}")
 
-    # Thresholds to try — same range as Yang & Dumontier
-    # Drug: Tanimoto similarity (0=completely different, 1=identical)
-    # Protein: cosine similarity (0=different, 1=identical)
     drug_thresholds = [1.0, 0.95, 0.90, 0.85, 0.80, 0.75, 0.70, 0.65, 0.60]
     prot_thresholds = [1.0, 0.99, 0.95, 0.8, 0.85, 0.70, 0.6, 0.55, 0.5, 0.4, 0.3]
     results = []
@@ -447,18 +338,12 @@ def main():
             else:
                 print(f"  [{done:3d}/{total}] drug<{d_thresh} prot<{p_thresh} → skipped (too few pairs)")
 
-    # Save results
     results_df = pd.DataFrame(results)
     results_df.to_csv(OUT_DIR / "similarity_results.csv", index=False)
 
-    # Plot
-    print("\n[5/5] Generating Pareto plot...")
     plot_pareto(results_df, baseline_auc)
 
-    # Print summary table
-    print("\n" + "=" * 60)
     print("  RESULTS SUMMARY")
-    print("=" * 60)
     print(f"  Baseline (no filtering): AUC {baseline_auc:.4f}")
     print(f"\n  Top results by AUC:")
     top = results_df.nlargest(5, "test_roc_auc")
@@ -477,14 +362,6 @@ def main():
             f"→ {row['train_pairs']:,} pairs "
             f"AUC {row['test_roc_auc']:.4f}"
         )
-
-    print(f"\n  Compare with Yang & Dumontier (2024):")
-    print(f"    Their baseline AUC:           0.9297")
-    print(f"    Their most aggressive AUC:    0.5627")
-    print(f"    Your baseline AUC:            {baseline_auc:.4f}")
-    print(f"    Your most aggressive AUC:     {results_df['test_roc_auc'].min():.4f}")
-    print(f"\n  Saved to: {OUT_DIR}")
-    print("=" * 60)
 
 
 if __name__ == "__main__":

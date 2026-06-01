@@ -1,3 +1,16 @@
+"""
+How this script works:
+1. Target Identification: Loads the filtered Parkinson's target metadata and
+   isolates the unique ChEMBL IDs for 'SINGLE PROTEIN' targets.
+2. Accession Mapping: Queries the ChEMBL API to map each ChEMBL target ID
+   to its primary UniProt accession number.
+3. Sequence Downloading: Uses the UniProt REST API to fetch the raw amino
+   acid sequence (FASTA format) for each mapped accession number.
+4. Caching & Export: Saves each sequence as a discrete `.fasta` file in the
+   raw data directory, intelligently skipping any that have already been
+   downloaded to save API limits and execution time.
+"""
+
 from pathlib import Path
 import pandas as pd
 import requests
@@ -7,8 +20,7 @@ from chembl_webresource_client.new_client import new_client
 
 def get_target_ids(targets_csv):
     df = pd.read_csv(targets_csv)
-    if "target_type" in df.columns:
-        df = df[df["target_type"] == "SINGLE PROTEIN"]
+    df = df[df["target_type"] == "SINGLE PROTEIN"]
     return sorted(df["target_chembl_id"].dropna().unique())
 
 
@@ -36,7 +48,6 @@ def main():
     out_dir.mkdir(parents=True, exist_ok=True)
 
     target_ids = get_target_ids(targets_csv)
-    print(f"Processing {len(target_ids)} targets")
 
     for tid in target_ids:
         accessions = get_uniprot_accessions(tid)
@@ -44,16 +55,14 @@ def main():
             continue
         acc = accessions[0]
         out_file = out_dir / f"{tid}_{acc}.fasta"
-
         if out_file.exists():
             continue
         try:
             fasta = fetch_uniprot_fasta(acc)
             out_file.write_text(fasta, encoding="utf-8")
             time.sleep(0.5)
-        except Exception as e:
-            print(f"Error for {tid}: {e}")
-    print(f"Sequences saved to {out_dir}")
+        except Exception:
+            time.sleep(2)
 
 
 if __name__ == "__main__":

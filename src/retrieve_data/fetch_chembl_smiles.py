@@ -1,3 +1,17 @@
+"""
+How this script works:
+1. Data Loading: Reads the master interactions CSV to extract a unique list of all
+   molecule IDs (ChEMBL IDs) involved in the dataset.
+2. Batching: Divides the list of IDs into smaller batches to respect the ChEMBL
+   REST API rate limits and prevent connection timeouts.
+3. API Querying: Requests the structural properties for each batch of molecules
+   from the ChEMBL database.
+4. SMILES Extraction: Parses the JSON response to extract the 1D 'canonical_smiles'
+   string representation for each molecule.
+5. Export: Saves the mapped ChEMBL IDs and their corresponding SMILES strings to
+   a new CSV file for downstream embedding generation.
+"""
+
 import pandas as pd
 from pathlib import Path
 import time
@@ -16,13 +30,14 @@ def fetch_smiles_in_batches(molecule_ids, batch_size=50):
             )
             for m in mols:
                 m_id = m.get('molecule_chembl_id')
-                structs = m.get('molecule_structures')
-                if structs and isinstance(structs, dict):
-                    smiles = structs.get('canonical_smiles')
-                    if smiles:
-                        smiles_dict[m_id] = smiles
-        except Exception as e:
-            print(f"Batch {i // batch_size + 1} failed: {e}")
+                structs = m.get('molecule_structures') or {}
+                smiles = structs.get('canonical_smiles')
+
+                if smiles:
+                    smiles_dict[m_id] = smiles
+
+        except Exception:
+            # Pause briefly if the ChEMBL API throttles or drops the connection
             time.sleep(2)
 
     return pd.DataFrame(

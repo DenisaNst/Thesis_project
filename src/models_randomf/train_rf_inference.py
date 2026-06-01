@@ -1,12 +1,8 @@
 """
-train_rf_inference.py
----------------------
 Trains the final inference model for drug repositioning predictions.
 
 Unlike train_rf_cv.py (which uses a time-slice split for honest evaluation),
-this script trains on ALL available ChEMBL interactions — no data is held back.
-The goal is not evaluation but to build the best possible model for predicting
-FDA drug repositioning candidates.
+this script trains on ALL available ChEMBL interactions, no data is held back.
 
 Hyperparameters are found via RandomizedSearchCV with 5-fold stratified CV.
 RandomizedSearchCV is preferred over GridSearchCV because it:
@@ -29,13 +25,6 @@ Usage:
     python src/models_randomf/train_rf_inference.py \
         --protein_embeddings_csv data/processed/drkg_target_embeddings.csv \
         --artifacts_dir artifacts/rf_inference_drkg
-
-Relation to other scripts:
-    train_rf.py            → random split, naive baseline (evaluation only)
-    train_rf_timeslice.py  → time-slice split (evaluation only)
-    train_rf_cv.py         → time-slice + hyperparameter search (evaluation only)
-    train_rf_inference.py  → ALL data + randomized CV search (THIS script)
-    random_forest.py       → runs inference using the model saved by THIS script
 """
 
 from __future__ import annotations
@@ -60,37 +49,17 @@ except ImportError:
     sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
     from evaluation import evaluation_protocol as eval_protocol  # type: ignore
 
-
-# ---------------------------------------------------------------------------
-# Hyperparameter search space
-# randint(a, b) samples integers uniformly from [a, b)
-# ---------------------------------------------------------------------------
 PARAM_DISTRIBUTIONS = {
-    "max_depth":         randint(5, 25),    # 5 to 24 — shallow to deep trees
-    "min_samples_leaf":  randint(1, 30),    # 1 to 29 — controls leaf size
-    "min_samples_split": randint(2, 40),    # 2 to 39 — controls split threshold
-    "n_estimators":      randint(100, 400), # 100 to 399 — number of trees
+    "max_depth":         randint(5, 25),
+    "min_samples_leaf":  randint(1, 30),
+    "min_samples_split": randint(2, 40),
+    "n_estimators":      randint(100, 400),
 }
 
-# Reference params from rf_cv for comparison in output
-RF_CV_PARAMS = {
-    "max_depth": 15,
-    "min_samples_leaf": 5,
-    "min_samples_split": 30,
-}
-
-
-# ---------------------------------------------------------------------------
-# Helpers
-# ---------------------------------------------------------------------------
 
 def _normalize_id_columns(df: pd.DataFrame) -> pd.DataFrame:
     out = df.copy()
     rename_map = {}
-    if "molecule_chembl_id" in out.columns and "drug_id" not in out.columns:
-        rename_map["molecule_chembl_id"] = "drug_id"
-    if "target_chembl_id" in out.columns and "target_id" not in out.columns:
-        rename_map["target_chembl_id"] = "target_id"
     if rename_map:
         out = out.rename(columns=rename_map)
     return out
@@ -112,19 +81,10 @@ def _prepare_matrix(
         c for c in merged.columns
         if c.startswith("drug_emb_") or c.startswith("target_emb_")
     ]
-    if not feature_cols:
-        raise ValueError("No embedding columns found after merging.")
-    if "label" not in merged.columns:
-        raise ValueError("No 'label' column found in interactions.")
-
     X = merged[feature_cols].to_numpy(dtype=np.float32)
     y = merged["label"].to_numpy(dtype=int)
     return merged, X, y, feature_cols
 
-
-# ---------------------------------------------------------------------------
-# Main
-# ---------------------------------------------------------------------------
 
 def main() -> None:
     project_root = Path(__file__).resolve().parents[2]
@@ -159,10 +119,6 @@ def main() -> None:
     args = parser.parse_args()
     args.artifacts_dir.mkdir(parents=True, exist_ok=True)
 
-    # ------------------------------------------------------------------
-    # 1. Load ALL interactions — no time-slice
-    # ------------------------------------------------------------------
-    print("[step 1/5] Loading ALL interactions (no time-slice)...")
     interactions = eval_protocol.load_and_standardize_interactions(
         str(args.interactions_csv)
     )
@@ -173,47 +129,9 @@ def main() -> None:
     print(f"  Drug embeddings:    {len(drug_emb):,} rows")
     print(f"  Protein embeddings: {len(protein_emb):,} rows")
 
-    label_counts = interactions["label"].value_counts()
-    print(f"  Label counts:  1={label_counts.get(1,0):,}  0={label_counts.get(0,0):,}")
-    print(f"  Positive rate: {interactions['label'].mean()*100:.1f}%")
-
-    # ------------------------------------------------------------------
-    # 2. Build feature matrix
-    # ------------------------------------------------------------------
-    print("\n[step 2/5] Building feature matrix...")
     merged, X, y, feature_cols = _prepare_matrix(
         interactions, drug_emb, protein_emb
     )
-    print(f"  Rows after merge: {X.shape[0]:,}")
-    print(f"  Feature dims:     {X.shape[1]}")
-
-    # ------------------------------------------------------------------
-    # 3. RandomizedSearchCV with stratified k-fold
-    #
-    # Why RandomizedSearchCV over GridSearchCV:
-    #   GridSearchCV tries every combination in a fixed grid (e.g. 27).
-    #   RandomizedSearchCV samples n_iter combinations from continuous
-    #   distributions, exploring a much wider space in the same budget.
-    #   Bergstra & Bengio (2012) showed random search finds equally good
-    #   or better hyperparameters than grid search for the same n_iter.
-    #
-    # Why StratifiedKFold:
-    #   No temporal split here — we want best params for the full data
-    #   distribution. Stratified ensures each fold preserves the
-    #   positive/negative ratio of the full dataset (~77% positive).
-    # ------------------------------------------------------------------
-    total_fits = args.n_iter * args.cv_folds
-    print(f"\n[step 3/5] RandomizedSearchCV...")
-    print(f"  Strategy:    RandomizedSearchCV (Bergstra & Bengio, 2012)")
-    print(f"  Iterations:  {args.n_iter} random combinations")
-    print(f"  CV folds:    {args.cv_folds}-fold stratified")
-    print(f"  Total fits:  {total_fits}")
-    print(f"  Search space:")
-    print(f"    max_depth:         5 to 24  (integers)")
-    print(f"    min_samples_leaf:  1 to 29  (integers)")
-    print(f"    min_samples_split: 2 to 39  (integers)")
-    print(f"    n_estimators:      100 to 399  (integers)")
-    print(f"  Estimated runtime: 20-40 minutes...\n")
 
     cv = StratifiedKFold(n_splits=args.cv_folds, shuffle=True, random_state=42)
 
@@ -242,7 +160,6 @@ def main() -> None:
     print(f"\n  Best parameters found: {best_params}")
     print(f"  Best CV AUC:           {best_cv_auc:.4f}")
 
-    # Show top 5 combinations
     cv_results = pd.DataFrame(random_search.cv_results_)
     print(f"\n  Top 5 combinations found:")
     top5 = cv_results.nlargest(5, "mean_test_score")[
@@ -261,21 +178,7 @@ def main() -> None:
             f"gap={gap:.4f}"
         )
 
-    # Compare with rf_cv reference params
-    print(f"\n  rf_cv reference params: {RF_CV_PARAMS}")
-    matches = all(
-        best_params.get(k) == v for k, v in RF_CV_PARAMS.items()
-    )
-    if matches:
-        print("  → Similar parameters found. Full-data search confirms rf_cv choice.")
-    else:
-        print("  → Different parameters found. Full-data distribution benefits")
-        print("    from different settings than the pre-2018 subset used in rf_cv.")
-
-    # ------------------------------------------------------------------
-    # 4. Retrain final model on ALL data with best params
-    # ------------------------------------------------------------------
-    print(f"\n[step 4/5] Retraining final model on ALL {X.shape[0]:,} pairs...")
+# Retrain the model
     final_clf = RandomForestClassifier(
         class_weight="balanced",
         random_state=42,
@@ -291,16 +194,7 @@ def main() -> None:
     y_prob_train = final_clf.predict_proba(X)[:, pos_idx]
     train_auc = roc_auc_score(y, y_prob_train)
     train_pr  = average_precision_score(y, y_prob_train)
-    print(f"\n  Sanity check (train AUC — expected high):")
-    print(f"    train_roc_auc: {train_auc:.4f}")
-    print(f"    train_pr_auc:  {train_pr:.4f}")
-    print(f"  ⚠ Do NOT report this as model performance.")
-    print(f"  Report rf_cv test AUC 0.7518 as the honest evaluation metric.")
 
-    # ------------------------------------------------------------------
-    # 5. Save
-    # ------------------------------------------------------------------
-    print(f"\n[step 5/5] Saving...")
 
     metadata = {
         "mode":        "full_data_inference",
@@ -318,7 +212,6 @@ def main() -> None:
         "train_rows":           int(X.shape[0]),
         "n_features":           int(X.shape[1]),
         "train_roc_auc_sanity": float(train_auc),
-        "rf_cv_params_for_ref": RF_CV_PARAMS,
         "train_target_ids": sorted(
             merged["target_id"].astype(str).unique().tolist()
         ),
@@ -340,10 +233,6 @@ def main() -> None:
         "best_params":          best_params,
         "best_cv_auc":          float(best_cv_auc),
         "train_roc_auc_sanity": float(train_auc),
-        "note": (
-            "No held-out test AUC — model trains on all data. "
-            "Report rf_cv AUC 0.7518 for thesis evaluation."
-        ),
     }, indent=2), encoding="utf-8")
     cv_results.to_csv(cv_results_path, index=False)
 
@@ -352,23 +241,10 @@ def main() -> None:
     print(f"  [saved] {metrics_path}")
     print(f"  [saved] {cv_results_path}")
 
-    print("\n" + "="*60)
     print("  INFERENCE MODEL READY")
-    print("="*60)
-    print(f"\n  Trained on:  {X.shape[0]:,} pairs (ALL ChEMBL data)")
-    print(f"  Features:    {X.shape[1]} dims")
     print(f"  Best params: {best_params}")
     print(f"  Best CV AUC: {best_cv_auc:.4f}")
     print(f"  Saved to:    {args.artifacts_dir}")
-    print(f"\n  Next step — run inference on FDA drugs:")
-    print(f"    python src/models_randomf/random_forest.py \\")
-    print(f"      --model_path {args.artifacts_dir}/rf_model.pkl \\")
-    print(f"      --metadata_path {args.artifacts_dir}/rf_metadata.json \\")
-    print(f"      --drug_embeddings_csv data/processed/drug_embeddings.csv \\")
-    print(f"      --protein_embeddings_csv data/processed/protein_embeddings.csv \\")
-    print(f"      --top_k 0 \\")
-    print(f"      --output_csv {args.artifacts_dir}/fda_target_scores_all.csv")
-    print("="*60)
 
 
 if __name__ == "__main__":

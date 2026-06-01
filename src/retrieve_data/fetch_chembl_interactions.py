@@ -1,8 +1,25 @@
+"""
+Steps:
+1. Indication Mapping: Queries the ChEMBL API for any molecules explicitly indicated
+   for Parkinson's Disease (using EFO terms).
+2. Target Extraction: Finds the Mechanism of Action (MoA) for those PD molecules
+   to identify the specific protein targets they interact with.
+3. Target Filtering: Restricts the targets strictly to 'Homo sapiens' (human) and
+   'SINGLE PROTEIN' to ensure structural consistency for the ESM2 embeddings later.
+4. Bioactivity Fetching: Pulls all raw binding affinity data (IC50, Ki, Kd) for
+   these specific targets across the entire ChEMBL database.
+5. Temporal Tagging: Fetches the exact publication year of the document that reported
+   each interaction. (This is critically important—it makes the Time-Slice evaluation
+   for RQ2 possible).
+6. Binarization: Converts continuous pChEMBL values into binary classes. A pChEMBL
+   score >= 6.0 (equivalent to <= 1 µM) is labeled as an Active interaction (1), and
+   anything lower is Inactive (0).
+"""
+
 from chembl_webresource_client.new_client import new_client
 import pandas as pd
 from pathlib import Path
 import time
-
 
 def get_pd_molecules():
     rows = list(new_client.drug_indication.filter(efo_term__icontains="parkinson"))
@@ -68,8 +85,6 @@ def fetch_target_activities(target_ids, standard_types=("IC50", "Ki", "Kd"), max
                "standard_units", "standard_relation", "pchembl_value", "assay_chembl_id", "document_chembl_id"]
 
     for idx, tid in enumerate(target_ids, start=1):
-        print(f"[{idx}/{len(target_ids)}] Fetching activities for {tid}")
-        success = False
         for attempt in range(1, max_retries + 1):
             try:
                 acts = (
@@ -94,7 +109,6 @@ def fetch_target_activities(target_ids, standard_types=("IC50", "Ki", "Kd"), max
                         "assay_chembl_id": a.get("assay_chembl_id"),
                         "document_chembl_id": a.get("document_chembl_id"),
                     })
-                success = True
                 break
             except Exception as exc:
                 wait_s = 2 ** (attempt - 1)
@@ -124,12 +138,10 @@ def main():
     final_out_file = out_dir / "chembl_pd_interactions.csv"
 
     molecule_ids, indication_df = get_pd_molecules()
-    print(f"[info] PD molecules from indication search: {len(molecule_ids)}")
 
     target_ids, mech_df = get_targets_from_molecules(molecule_ids)
     target_df = get_target_metadata(target_ids)
     filtered_target_ids = filter_targets(target_df)
-    print(f"[info] Filtered targets (human + single protein): {len(filtered_target_ids)}")
 
     act_df = fetch_target_activities(filtered_target_ids)
 
@@ -148,7 +160,6 @@ def main():
     combined.to_csv(final_out_file, index=False)
 
     print(f"[done] Saved final interactions dataset: {final_out_file}")
-    print(f"[done] Final rows: {len(combined)}")
 
 
 if __name__ == "__main__":

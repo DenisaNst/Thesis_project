@@ -1,13 +1,24 @@
 """
-saliency_maps.py (ENHANCED)
----------------------------
-Generates saliency maps (subgraph visualizations) for RF drug repositioning candidates
-using the trained PDHeteroGNN model on the DRKG knowledge graph.
+Heterogeneous GNN Interpretability Engine for the Parkinson's Drug Repositioning Framework.
 
-Now includes:
-  - Input gradient saliency computation
-  - Subgraph extraction showing the paths that influenced predictions
-  - Network visualizations showing biological connections
+This script directly addresses Research Question 4 (RQ4) from the thesis. While the 
+Random Forest classifier identifies high-confidence drug-target pairs based on 
+multimodal embeddings, it inherently lacks biological transparency. This script 
+acts as the post-hoc interpretability engine.
+
+It loads the trained Heterogeneous GraphSAGE model (PDHeteroGNN) and performs 
+input gradient analysis on the Drug Repurposing Knowledge Graph (DRKG). By measuring 
+how much each node's input embedding influences the final prediction score, it 
+identifies the "biological bridges" (Genes, Diseases, Pathways) connecting a drug 
+to a target, generating the explanatory subgraphs seen in the final report.
+
+Key functionality:
+  - Gradient-based Saliency: Computes the derivative of the prediction score with 
+    respect to all node embeddings.
+  - Subgraph Extraction: Isolates the specific biomedical network pathways driven 
+    by the top influential nodes.
+  - Saliency Visualization: Generates the directed network diagrams (e.g., the 
+    Abemaciclib and Acetazolamide figures) mapping node size to mathematical importance.
 """
 
 from __future__ import annotations
