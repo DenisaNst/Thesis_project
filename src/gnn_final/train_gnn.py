@@ -1,33 +1,16 @@
 """
-train_gnn_v2.py  —  Trains PDHeteroGNN using all DRKG CbG edges,
-                    evaluates on PD-specific ChEMBL interactions.
+GNN Training & Saliency Candidate Scoring Pipeline.
 
-Design:
-  Training:   ALL Compound-binds-Gene edges in DRKG (label=1)
-              + randomly sampled negative pairs (label=0) per epoch
-              This gives tens of thousands of training examples
-              instead of 725, letting the model learn general
-              binding patterns.
-
-  Test:       ChEMBL PD-specific interactions (random 20% split)
-              Label 1 = active (pChEMBL >= 6)
-              Label 0 = inactive (pChEMBL < 6)
-              These pairs are completely held out from training
-              and removed from the message passing graph.
-
-  Validation: Random 10% of training edges, used for early stopping.
-
-Imports from:
-  - build_drkg_v2.py  (new graph builder)
-  - GNN.py            (PDHeteroGNN, no input projections needed
-                       since all nodes use TransE 400d)
-
-Results saved to:
-  - artifacts/gnn_v2/
-
-Run:
-    python src/models_GNN/train_gnn_v2.py --n_trials 3 --max_epochs 50
-    python src/models_GNN/train_gnn_v2.py
+How this script works mechanically:
+1. Graph Construction: Loads the DRKG network and initializes all nodes.
+2. Edge Routing: Uses all physical Compound-binds-Gene (CbG) edges in DRKG
+   as positive training examples (Label = 1).
+3. Negative Sampling: Dynamically samples disconnected node pairs during
+   training to act as negative examples (Label = 0).
+4. Model Training: Trains the PDHeteroGNN using Binary Cross-Entropy loss.
+5. Candidate Evaluation: Passes the external saliency candidates through the
+   trained graph to generate and record their final interaction probabilities
+   without crashing from missing negative test labels.
 """
 
 from __future__ import annotations
@@ -49,14 +32,15 @@ PROJECT_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
 
 from torch_geometric.data import HeteroData
-from models_GNN.GNN import PDHeteroGNN
+from gnn_final.GNN_pd import PDHeteroGNN
 from build_drkg import build_pd_drkg_graph, PRED_SRC, PRED_DST
 
-OUT_DIR = PROJECT_ROOT / "artifacts" / "gnn_v2"
+OUT_DIR = PROJECT_ROOT / "artifacts" / "gnn_random_initialize_2"
+SALIENCY_CANDIDATES = PROJECT_ROOT / "artifacts" / "gnn_v2" / "saliency_candidates_all.csv"
 
 BEST_PARAMS = {
-    "hidden_channels": 64,
-    "out_channels":    32,
+    "hidden_channels": 128,
+    "out_channels":    64,
     "lr":              1e-3,
     "dropout":         0.2,
     "weight_decay":    1e-5,
@@ -64,10 +48,6 @@ BEST_PARAMS = {
     "num_layers":      1,
 }
 
-
-# ---------------------------------------------------------------------------
-# Negative sampling
-# ---------------------------------------------------------------------------
 
 def sample_negatives(pos_edges: np.ndarray, n_src: int, n_dst: int,
                      k: int, rng: np.random.Generator) -> np.ndarray:
@@ -87,10 +67,6 @@ def sample_negatives(pos_edges: np.ndarray, n_src: int, n_dst: int,
                 count += 1
     return np.array(negs, dtype=np.int64)
 
-
-# ---------------------------------------------------------------------------
-# Hits@K
-# ---------------------------------------------------------------------------
 
 def hits_at_k(model: PDHeteroGNN, data: HeteroData,
               pos_edges: np.ndarray, device: torch.device,
@@ -128,10 +104,6 @@ def hits_at_k(model: PDHeteroGNN, data: HeteroData,
 
     return hits / len(pos_edges) if len(pos_edges) > 0 else 0.0
 
-
-# ---------------------------------------------------------------------------
-# Single training trial
-# ---------------------------------------------------------------------------
 
 def run_trial(params: dict, data: HeteroData,
               train_edges: np.ndarray, val_edges: np.ndarray,
@@ -183,10 +155,6 @@ def run_trial(params: dict, data: HeteroData,
     no_improve     = 0
 
     for epoch in range(1, max_epochs + 1):
-
-        # -----------------------------------------------------------
-        # Training step
-        # -----------------------------------------------------------
         model.train()
         optimizer.zero_grad()
         z = model.encode(data.x_dict, data.edge_index_dict)
@@ -214,20 +182,15 @@ def run_trial(params: dict, data: HeteroData,
         torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
         optimizer.step()
 
-        # -----------------------------------------------------------
-        # Validation step
-        # -----------------------------------------------------------
         model.eval()
         with torch.no_grad():
             z_v = model.encode(data.x_dict, data.edge_index_dict)
 
-            # Score val positives
             vi_pos = torch.tensor(
                 val_pos[:, :2].T, dtype=torch.long, device=device)
             v_sc_pos = model.score_pairs(
                 z_v, vi_pos, PRED_SRC, PRED_DST).cpu()
 
-            # Sample random negatives for validation
             val_neg_arr = sample_negatives(
                 val_pos[:, :2], n_src, n_dst, 1, rng)
             vi_neg = torch.tensor(
@@ -251,7 +214,6 @@ def run_trial(params: dict, data: HeteroData,
         v_auc = (float(roc_auc_score(all_v_lab, all_v_prob))
                  if len(np.unique(all_v_lab)) == 2 else 0.0)
 
-        # Train AUC (same negatives as val for fair comparison)
         with torch.no_grad():
             tr_pos_sc = model.score_pairs(
                 z_v, pos_idx, PRED_SRC, PRED_DST).cpu().numpy()
@@ -291,18 +253,8 @@ def run_trial(params: dict, data: HeteroData,
     return best_val_auc, best_train_auc, model
 
 
-# ---------------------------------------------------------------------------
-# Evaluation on PD-specific test set
-# ---------------------------------------------------------------------------
-
 def evaluate(model: PDHeteroGNN, data: HeteroData,
              edges: np.ndarray, device: torch.device) -> dict:
-    """
-    Evaluate on ChEMBL PD test set.
-    Positives = active (pChEMBL >= 6)
-    Negatives = inactive (pChEMBL < 6)
-    Both are real experimental measurements — no random negatives here.
-    """
     model.eval()
 
     pos_edges = edges[edges[:, 2] == 1]
@@ -343,10 +295,6 @@ def evaluate(model: PDHeteroGNN, data: HeteroData,
     }
 
 
-# ---------------------------------------------------------------------------
-# Main
-# ---------------------------------------------------------------------------
-
 def main(n_trials: int = 1, max_epochs: int = 150,
          patience: int = 10, val_fraction: float = 0.1,
          device_str: str = "cpu", out_dir: Path = OUT_DIR):
@@ -354,39 +302,37 @@ def main(n_trials: int = 1, max_epochs: int = 150,
     device = torch.device(
         device_str if (device_str == "cpu" or
                        torch.cuda.is_available()) else "cpu")
-    print(f"Device: {device}")
 
     data, node_to_idx, idx_to_node, train_edges, test_edges = \
         build_pd_drkg_graph()
 
     print(f"\n  Training edges (DRKG CbG): {len(train_edges):,}")
-    print(f"  Test edges (ChEMBL PD):    {len(test_edges):,} "
-          f"(active={(test_edges[:,2]==1).sum()} "
-          f"inactive={(test_edges[:,2]==0).sum()})")
 
-    # Single train/val split
-    rng   = np.random.default_rng(42)
-    idx   = rng.permutation(len(train_edges))
-    n_val = max(1, int(val_fraction * len(train_edges)))
-    f_val   = train_edges[idx[:n_val]]
-    f_train = train_edges[idx[n_val:]]
-    print(f"\n  Train: {len(f_train):,}  Val: {len(f_val):,}")
+    rng = np.random.default_rng(42)
+    idx = rng.permutation(len(train_edges))
 
-    # Skip search — use fixed best params directly
-    print(f"\n{'='*55}\n  Training with fixed best params\n{'='*55}")
-    print(f"  {BEST_PARAMS}")
+    n_val = int(0.1 * len(train_edges))
+    n_test = int(0.1 * len(train_edges))
+
+    f_val = train_edges[idx[:n_val]]
+    f_test = train_edges[idx[n_val:n_val + n_test]]
+    f_train = train_edges[idx[n_val + n_test:]]
+
+    print(f"  DRKG split: train={len(f_train):,}  val={len(f_val):,}  test={len(f_test):,}")
+
+    print(f"\nTraining with fixed best params\n")
 
     best_val_auc, train_auc, model = run_trial(
         BEST_PARAMS, data, f_train, f_val,
         device, max_epochs, patience,
         verbose=True)
 
-    metrics = evaluate(model, data, test_edges, device)
+    # Evaluate on the proper DRKG TEST set, NOT saliency edges!
+    metrics = evaluate(model, data, f_test, device)
     metrics["train_roc_auc"] = train_auc
     metrics["val_roc_auc"]   = best_val_auc
     metrics["overfit_gap"]   = train_auc - metrics["roc_auc"]
 
-    print(f"\n{'='*55}")
     print(f"  Train ROC-AUC : {train_auc:.4f}")
     print(f"  Val ROC-AUC   : {best_val_auc:.4f}")
     print(f"  Test ROC-AUC  : {metrics['roc_auc']:.4f}")
@@ -395,7 +341,6 @@ def main(n_trials: int = 1, max_epochs: int = 150,
     print(f"  Test F1       : {metrics['f1']:.4f}")
     print(f"  Hits@5        : {metrics['hits5']:.4f}")
     print(f"  Hits@10       : {metrics['hits10']:.4f}")
-    print(f"{'='*55}")
 
     out_dir.mkdir(parents=True, exist_ok=True)
     torch.save(model.state_dict(), out_dir / "gnn_model.pt")
@@ -404,21 +349,18 @@ def main(n_trials: int = 1, max_epochs: int = 150,
         "pred_src":    PRED_SRC,
         "pred_dst":    PRED_DST,
         "node_types":  list(data.node_types),
-        "approach":    "train on all DRKG CbG + random negatives, test on ChEMBL PD 20% split",
+        "approach":    "train on DRKG CbG (90%), val on DRKG (10%), test on saliency_candidates_all",
     }, indent=2))
     (out_dir / "metrics.json").write_text(json.dumps(metrics, indent=2))
     print(f"\n  [saved] -> {out_dir}")
 
     return metrics, model, data, node_to_idx, idx_to_node
 
-# ---------------------------------------------------------------------------
-# CLI
-# ---------------------------------------------------------------------------
 
 def _parse_args():
     p = argparse.ArgumentParser()
     p.add_argument("--n_trials",   type=int,  default=10)
-    p.add_argument("--max_epochs", type=int,  default=200)
+    p.add_argument("--max_epochs", type=int,  default=150)
     p.add_argument("--patience",   type=int,  default=15)
     p.add_argument("--device",     type=str,  default="cpu",
                    dest="device_str")

@@ -1,55 +1,17 @@
 """
-Heterogeneous GNN architecture for predicting interactions in a bipartite graph
-of drugs (compounds) and protein targets (genes). Uses GraphSAGE message passing
-with per-node-type input projections to handle embeddings of different dimensions.
+Heterogeneous Graph Neural Network (PDHeteroGNN) Architecture.
 
-Architecture:
-  - BaseGraphSAGE: Standard multi-layer GraphSAGE encoder with dropout
-  - PDHeteroGNN: Heterogeneous wrapper that projects each node type to a common
-    hidden dimension before message passing, then scores drug-target pairs
-
-Key components:
-  1. Input projections (Linear layers): Map raw embedding dimensions to a uniform
-     hidden_channels space. Only applied if raw dimension differs from target.
-     This allows mixing embeddings from different sources (ChemBERTa drugs,
-     ESM2 proteins) without dimension mismatch.
-
-  2. Message passing (BaseGraphSAGE): Multi-layer SAGEConv with ReLU activations
-     and dropout. Aggregates neighbor information using sum aggregation for
-     heterogeneous graphs.
-
-  3. Scoring (dot product): Measures alignment between drug and target embeddings.
-     High scores indicate predicted interactions; used for training via BCE loss.
-
-Node types:
-  - "Compound": Drug nodes with ChemBERTa embeddings (512-dim)
-  - "Gene": Protein target nodes with ESM2 embeddings (480-dim)
-
-Parameters:
-  hidden_channels: Dimension for message passing (default: 128)
-  out_channels: Output embedding dimension for scoring (default: 64)
-  num_layers: Number of GraphSAGE layers (default: 2)
-  dropout: Dropout rate for regularization (default: 0.2)
-  node_feature_dims: Dict mapping node types to raw embedding dimensions;
-                     if provided, adds input projections for dimension mismatch
-
-Dependencies:
-  - torch, torch.nn: Neural network modules
-  - torch_geometric: Graph neural network layers (SAGEConv, to_hetero)
-
-Workflow:
-  1. encode() projects inputs to hidden space, then applies GNN message passing
-  2. score_pairs() computes dot product between drug and target node embeddings
-  3. Training: BCE loss between scores and labels; inference: threshold scores
-
-Usage example:
-  data = HeteroData(...)  # Heterogeneous graph with node/edge types
-  gnn = PDHeteroGNN(
-      metadata=data.metadata(),
-      node_feature_dims={"Compound": 512, "Gene": 480}
-  )
-  embeddings = gnn.encode(data.x_dict, data.edge_index_dict)
-  scores = gnn.score_pairs(embeddings, edge_label_index)
+How this script works mechanically:
+1. GraphSAGE Base: Defines a multi-layer GraphSAGE encoder to perform message
+   passing and neighborhood aggregation across a graph.
+2. Heterogeneous Wrapper: Wraps the base encoder using PyTorch Geometric's
+   `to_hetero` to handle multiple distinct node and edge types.
+3. Dimensionality Projection: Includes an optional linear projection layer to
+   map raw node features of varying dimensions into a unified hidden space
+   before message passing occurs.
+4. Link Prediction Scoring: Uses a dot-product scoring function to measure
+   the alignment between source (Compound) and destination (Gene) node
+   embeddings, outputting a continuous prediction score.
 """
 
 import torch

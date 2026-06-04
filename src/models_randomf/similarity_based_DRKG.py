@@ -6,8 +6,6 @@ is using DRKG TransE embeddings.
 from __future__ import annotations
 
 import sys
-import json
-import pickle
 import warnings
 from pathlib import Path
 
@@ -18,7 +16,7 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.metrics import roc_auc_score, average_precision_score, f1_score
+from sklearn.metrics import roc_auc_score, average_precision_score
 from sklearn.preprocessing import normalize
 
 warnings.filterwarnings("ignore")
@@ -31,20 +29,48 @@ try:
 except ImportError:
     from src.evaluation import evaluation_protocol as eval_protocol
 
-OUT_DIR = PROJECT_ROOT / "artifacts" / "rf_similarity_drkg"
+OUT_DIR = PROJECT_ROOT / "artifacts" / "rf_similarity_drkg_random2"
 FIG_DIR = PROJECT_ROOT / "reports" / "figures"
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 FIG_DIR.mkdir(parents=True, exist_ok=True)
 
+# Initialize with time-slice
+# def load_data():
+#     interactions = eval_protocol.load_and_standardize_interactions(
+#         str(PROJECT_ROOT / "data/raw/chembl_pd_interactions.csv")
+#     )
+#
+#     CUTOFF = 2018
+#     train_int = interactions[interactions["year"] <= CUTOFF].copy()
+#     test_int = interactions[interactions["year"] > CUTOFF].copy()
+#
+#     drug_emb = pd.read_csv(
+#         PROJECT_ROOT / "data/processed/chembl_drug_embeddings.csv"
+#     ).rename(columns={"molecule_chembl_id": "drug_id"})
+#
+#     prot_emb = pd.read_csv(
+#         PROJECT_ROOT / "data/processed/drkg_target_embeddings.csv"
+#     )
+#
+#     return train_int, test_int, drug_emb, prot_emb
 
+# If you want random split
 def load_data():
     interactions = eval_protocol.load_and_standardize_interactions(
         str(PROJECT_ROOT / "data/raw/chembl_pd_interactions.csv")
     )
+    from sklearn.model_selection import train_test_split
 
-    CUTOFF = 2018
-    train_int = interactions[interactions["year"] <= CUTOFF].copy()
-    test_int = interactions[interactions["year"] > CUTOFF].copy()
+    idx = np.arange(len(interactions))
+    train_idx, test_idx = train_test_split(
+        idx, test_size=0.2, random_state=42,
+        stratify=interactions["label"].values
+    )
+
+    train_int = interactions.iloc[train_idx].copy().reset_index(drop=True)
+    test_int = interactions.iloc[test_idx].copy().reset_index(drop=True)
+
+    print(f"  Train: {len(train_int):,} pairs | Test: {len(test_int):,} pairs")
 
     drug_emb = pd.read_csv(
         PROJECT_ROOT / "data/processed/chembl_drug_embeddings.csv"
@@ -54,47 +80,43 @@ def load_data():
         PROJECT_ROOT / "data/processed/drkg_target_embeddings.csv"
     )
 
-    smiles_df = pd.read_csv(
-        PROJECT_ROOT / "data/raw/pd_molecule_smiles.csv"
-    ).rename(columns={"molecule_chembl_id": "drug_id"})
-
-    return train_int, test_int, drug_emb, prot_emb, smiles_df
+    return train_int, test_int, drug_emb, prot_emb
 
 
-def compute_drug_similarity(train_drug_ids, test_drug_ids, smiles_df):
-    try:
-        from rdkit import Chem
-        from rdkit.Chem import AllChem, DataStructs
-    except ImportError:
-        raise ImportError("RDKit required: pip install rdkit")
+def compute_drug_similarity(train_drug_ids, test_drug_ids, drug_emb):
+    emb_cols = [c for c in drug_emb.columns if c.startswith("drug_emb_")]
+    drug_map = {
+        row["drug_id"]: row[emb_cols].values.astype(np.float32)
+        for _, row in drug_emb.iterrows()
+    }
 
-    smiles_map = dict(zip(smiles_df["drug_id"], smiles_df["smiles"]))
+    test_vecs = np.array([
+        drug_map[d] for d in test_drug_ids if d in drug_map
+    ])
 
-    def get_fp(drug_id):
-        smi = smiles_map.get(drug_id)
-        mol = Chem.MolFromSmiles(smi)
-        return AllChem.GetMorganFingerprintAsBitVect(mol, 2, nBits=2048)
+    if len(test_vecs) == 0:
+        return {d: 0.0 for d in train_drug_ids}
 
-    test_fps = []
-    valid_test = []
-    for did in test_drug_ids:
-        fp = get_fp(did)
-        if fp is not None:
-            test_fps.append(fp)
-            valid_test.append(did)
-    print(f"  Test drugs with valid fingerprints: {len(valid_test):,}")
+    test_normed = normalize(test_vecs)
 
     max_sim = {}
     n_train = len(train_drug_ids)
     for i, did in enumerate(train_drug_ids):
         if i % 5000 == 0:
             print(f"  Processing training drug {i:,}/{n_train:,}")
-        fp = get_fp(did)
-        if fp is None:
+
+        if did not in drug_map:
             max_sim[did] = 0.0
             continue
-        sims = DataStructs.BulkTanimotoSimilarity(fp, test_fps)
-        max_sim[did] = float(max(sims)) if sims else 0.0
+
+        vec = normalize(drug_map[did].reshape(1, -1))
+        sims = (vec @ test_normed.T).flatten()
+        max_sim[did] = float(np.max(sims))
+
+    sim_values = list(max_sim.values())
+    print(f"  Max drug similarity: min={min(sim_values):.3f} "
+          f"mean={np.mean(sim_values):.3f} "
+          f"max={max(sim_values):.3f}")
     return max_sim
 
 
@@ -163,7 +185,11 @@ def run_experiment(
 
     original_n = len(train_int)
     filtered_n = len(filtered_train)
-    reduction  = 1 - filtered_n / original_n
+
+    # Safety check in case it deletes literally everything
+    if original_n == 0:
+        return None
+    reduction = 1 - filtered_n / original_n
 
     _, X_train, y_train, _ = prepare_feature_matrix(
         filtered_train, drug_emb, prot_emb
@@ -171,6 +197,9 @@ def run_experiment(
     _, X_test,  y_test,  _ = prepare_feature_matrix(
         test_int, drug_emb, prot_emb
     )
+
+    if len(X_train) < 50 or len(X_test) < 10:
+        return None
 
     clf = RandomForestClassifier(
         n_estimators=200,
@@ -262,12 +291,14 @@ def plot_pareto(results_df, baseline_auc):
     ax2.set_ylabel("Test ROC-AUC", fontsize=11)
     ax2.set_title("AUC vs Training Data Reduction\nby Drug Similarity Threshold",
                   fontsize=11)
-    ax2.legend(fontsize=8, loc="lower left")
+
+    # Legend pushed entirely outside the graph to prevent overlap
+    ax2.legend(fontsize=8, loc='center left', bbox_to_anchor=(1, 0.5))
     ax2.set_ylim(0.45, baseline_auc + 0.05)
     ax2.yaxis.grid(True, alpha=0.4)
 
     plt.tight_layout()
-    out = FIG_DIR / "fig_similarity_partitioning_drkg.png"
+    out = FIG_DIR / "fig_similarity_partitioning_drkg_random2.png"
     plt.savefig(str(out), dpi=150, bbox_inches="tight")
     plt.close()
     print(f"  [saved] {out}")
@@ -276,7 +307,7 @@ def plot_pareto(results_df, baseline_auc):
 def main():
     print("  Similarity-Based Partitioning with DRKG TransE ")
 
-    train_int, test_int, drug_emb, prot_emb, smiles_df = load_data()
+    train_int, test_int, drug_emb, prot_emb = load_data()
 
     train_drugs   = train_int["drug_id"].unique().tolist()
     test_drugs    = test_int["drug_id"].unique().tolist()
@@ -288,7 +319,7 @@ def main():
     print(f"  Unique train targets: {len(train_targets)}")
     print(f"  Unique test targets:  {len(test_targets)}")
 
-    drug_max_sim = compute_drug_similarity(train_drugs, test_drugs, smiles_df)
+    drug_max_sim = compute_drug_similarity(train_drugs, test_drugs, drug_emb)
     prot_max_sim = compute_protein_similarity(
         train_targets, test_targets, prot_emb
     )
@@ -312,8 +343,8 @@ def main():
     print(f"\n  Baseline AUC (no filtering): {baseline_auc:.4f}")
     print(f"  Train pairs (no filtering):  {len(X_train_full):,}")
 
-    drug_thresholds = [1.0, 0.95, 0.90, 0.85, 0.80, 0.75, 0.70, 0.65, 0.60]
-    prot_thresholds = [1.0, 0.99, 0.95, 0.8, 0.85, 0.70, 0.6, 0.55, 0.5, 0.4, 0.3]
+    drug_thresholds = [1.0, 0.95, 0.90, 0.85, 0.80, 0.75, 0.70, 0.65, 0.60, 0.50]
+    prot_thresholds = [1.0, 0.99, 0.98, 0.97, 0.96, 0.95, 0.94, 0.92, 0.90, 0.85]
     results = []
     total = len(drug_thresholds) * len(prot_thresholds)
     done  = 0
@@ -339,11 +370,11 @@ def main():
                 print(f"  [{done:3d}/{total}] drug<{d_thresh} prot<{p_thresh} → skipped (too few pairs)")
 
     results_df = pd.DataFrame(results)
-    results_df.to_csv(OUT_DIR / "similarity_results.csv", index=False)
+    results_df.to_csv(OUT_DIR / "similarity_results_drkg_random2.csv", index=False)
 
     plot_pareto(results_df, baseline_auc)
 
-    print("  RESULTS SUMMARY")
+    print("\n  RESULTS SUMMARY")
     print(f"  Baseline (no filtering): AUC {baseline_auc:.4f}")
     print(f"\n  Top results by AUC:")
     top = results_df.nlargest(5, "test_roc_auc")
