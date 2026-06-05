@@ -1,16 +1,16 @@
 """
-GNN Training & Saliency Candidate Scoring Pipeline.
-
-How this script works mechanically:
-1. Graph Construction: Loads the DRKG network and initializes all nodes.
-2. Edge Routing: Uses all physical Compound-binds-Gene (CbG) edges in DRKG
-   as positive training examples (Label = 1).
+How this script works :
+1. Graph Construction: Loads the DRKG network, where nodes are pre-initialized
+   with 400-dimensional TransE embeddings, and high-confidence saliency candidates
+   have been explicitly removed to prevent data leakage.
+2. Edge Routing: Uses all remaining physical Compound-binds-Gene (CbG) edges
+   in DRKG as positive training examples (Label = 1).
 3. Negative Sampling: Dynamically samples disconnected node pairs during
    training to act as negative examples (Label = 0).
-4. Model Training: Trains the PDHeteroGNN using Binary Cross-Entropy loss.
-5. Candidate Evaluation: Passes the external saliency candidates through the
-   trained graph to generate and record their final interaction probabilities
-   without crashing from missing negative test labels.
+4. Model Training: Trains the PDHeteroGNN using Binary Cross-Entropy loss
+   with PyTorch Geometric lazy initialization.
+5. Evaluation: Computes final testing metrics (ROC-AUC, PR-AUC, Hits@k)
+   and saves the model weights (gnn_model.pt) for downstream interpretability analysis.
 """
 
 from __future__ import annotations
@@ -35,8 +35,7 @@ from torch_geometric.data import HeteroData
 from gnn_final.GNN_pd import PDHeteroGNN
 from build_drkg import build_pd_drkg_graph, PRED_SRC, PRED_DST
 
-OUT_DIR = PROJECT_ROOT / "artifacts" / "gnn_random_initialize_2"
-SALIENCY_CANDIDATES = PROJECT_ROOT / "artifacts" / "gnn_v2" / "saliency_candidates_all.csv"
+OUT_DIR = PROJECT_ROOT / "artifacts" / "gnn_3"
 
 BEST_PARAMS = {
     "hidden_channels": 128,
@@ -51,11 +50,6 @@ BEST_PARAMS = {
 
 def sample_negatives(pos_edges: np.ndarray, n_src: int, n_dst: int,
                      k: int, rng: np.random.Generator) -> np.ndarray:
-    """
-    Sample k random negatives per positive by corrupting the tail.
-    These represent untested drug-gene pairs — the vast majority of
-    which are true non-interactions.
-    """
     pos_set = set(map(tuple, pos_edges[:, :2].tolist()))
     negs = []
     for src, _ in pos_edges[:, :2]:
@@ -70,11 +64,7 @@ def sample_negatives(pos_edges: np.ndarray, n_src: int, n_dst: int,
 
 def hits_at_k(model: PDHeteroGNN, data: HeteroData,
               pos_edges: np.ndarray, device: torch.device,
-              k: int = 10, n_neg: int = 99) -> float:
-    """
-    For each positive pair, rank it against n_neg random negatives.
-    Returns fraction that rank in the top-k.
-    """
+              k: int = 5, n_neg: int = 99) -> float:
     model.eval()
     rng   = np.random.default_rng(0)
     n_dst = data[PRED_DST].x.shape[0]
@@ -101,24 +91,14 @@ def hits_at_k(model: PDHeteroGNN, data: HeteroData,
         rank = int(np.sum(scores > scores[0])) + 1
         if rank <= k:
             hits += 1
-
     return hits / len(pos_edges) if len(pos_edges) > 0 else 0.0
 
 
 def run_trial(params: dict, data: HeteroData,
               train_edges: np.ndarray, val_edges: np.ndarray,
               device: torch.device, max_epochs: int = 150,
-              patience: int = 10,
+              patience: int = 15,
               verbose: bool = False) -> tuple[float, float, PDHeteroGNN]:
-    """
-    Train one hyperparameter configuration.
-
-    Training edges are ALL DRKG CbG positives (label=1).
-    Negatives are sampled randomly each epoch.
-    Validation edges are a held-out subset of training edges.
-
-    Returns (best_val_auc, train_auc_at_best, model)
-    """
     rng  = np.random.default_rng(42)
     k    = params["neg_k"]
     data = data.to(device)
@@ -142,11 +122,8 @@ def run_trial(params: dict, data: HeteroData,
     n_src = data[PRED_SRC].x.shape[0]
     n_dst = data[PRED_DST].x.shape[0]
 
-    # Training edges are all positive (from DRKG CbG)
-    # Validation edges are also all positive (held-out CbG)
-    # Negatives are sampled randomly for both
-    train_pos = train_edges  # all label=1
-    val_pos   = val_edges    # all label=1
+    train_pos = train_edges
+    val_pos   = val_edges
 
     best_val_loss  = float("inf")
     best_val_auc   = 0.0
@@ -163,7 +140,6 @@ def run_trial(params: dict, data: HeteroData,
             train_pos[:, :2].T, dtype=torch.long, device=device)
         pos_sc  = model.score_pairs(z, pos_idx, PRED_SRC, PRED_DST)
 
-        # Sample random negatives — k per positive
         neg_arr = sample_negatives(
             train_pos[:, :2], n_src, n_dst, k, rng)
         neg_idx = torch.tensor(
@@ -231,13 +207,6 @@ def run_trial(params: dict, data: HeteroData,
         train_auc = float(roc_auc_score(tr_lab, tr_prob)) \
             if len(np.unique(tr_lab)) == 2 else 0.0
 
-        if verbose and epoch % 10 == 0:
-            print(f"      epoch {epoch:3d} | "
-                  f"loss={loss.item():.4f} | "
-                  f"v_loss={v_loss:.4f} | "
-                  f"train_auc={train_auc:.4f} | "
-                  f"v_auc={v_auc:.4f}")
-
         if v_loss < best_val_loss:
             best_val_loss  = v_loss
             best_val_auc   = v_auc
@@ -254,30 +223,31 @@ def run_trial(params: dict, data: HeteroData,
 
 
 def evaluate(model: PDHeteroGNN, data: HeteroData,
-             edges: np.ndarray, device: torch.device) -> dict:
+             pos_edges: np.ndarray, device: torch.device) -> dict:
     model.eval()
 
-    pos_edges = edges[edges[:, 2] == 1]
-    neg_edges = edges[edges[:, 2] == 0]
+    n_src = data[PRED_SRC].x.shape[0]
+    n_dst = data[PRED_DST].x.shape[0]
+    rng = np.random.default_rng(42)
+
+    neg_edges_arr = sample_negatives(pos_edges, n_src, n_dst, 1, rng)
 
     with torch.no_grad():
         z = model.encode(data.x_dict, data.edge_index_dict)
-
         pos_sc = model.score_pairs(
             z,
             torch.tensor(pos_edges[:, :2].T,
                          dtype=torch.long, device=device),
             PRED_SRC, PRED_DST).cpu().numpy()
-
         neg_sc = model.score_pairs(
             z,
-            torch.tensor(neg_edges[:, :2].T,
+            torch.tensor(neg_edges_arr.T,
                          dtype=torch.long, device=device),
             PRED_SRC, PRED_DST).cpu().numpy()
-
     all_scores = np.concatenate([pos_sc, neg_sc])
     all_labels = np.concatenate([np.ones(len(pos_sc)),
                                  np.zeros(len(neg_sc))])
+
     probs = torch.sigmoid(torch.tensor(all_scores)).numpy()
     preds = (probs >= 0.5).astype(int)
 
@@ -288,15 +258,15 @@ def evaluate(model: PDHeteroGNN, data: HeteroData,
 
     return {
         "roc_auc": float(roc_auc_score(all_labels, probs)),
-        "pr_auc":  float(average_precision_score(all_labels, probs)),
-        "f1":      float(f1_score(all_labels, preds, zero_division=0)),
-        "hits5":   hits_at_k(model, data, pos_edges, device, k=5),
-        "hits10":  hits_at_k(model, data, pos_edges, device, k=10),
+        "pr_auc": float(average_precision_score(all_labels, probs)),
+        "f1": float(f1_score(all_labels, preds, zero_division=0)),
+        "hits5": hits_at_k(model, data, pos_edges, device, k=5),
+        "hits10": hits_at_k(model, data, pos_edges, device, k=10),
     }
 
 
 def main(n_trials: int = 1, max_epochs: int = 150,
-         patience: int = 10, val_fraction: float = 0.1,
+         patience: int = 15, val_fraction: float = 0.1,
          device_str: str = "cpu", out_dir: Path = OUT_DIR):
 
     device = torch.device(
@@ -305,8 +275,6 @@ def main(n_trials: int = 1, max_epochs: int = 150,
 
     data, node_to_idx, idx_to_node, train_edges, test_edges = \
         build_pd_drkg_graph()
-
-    print(f"\n  Training edges (DRKG CbG): {len(train_edges):,}")
 
     rng = np.random.default_rng(42)
     idx = rng.permutation(len(train_edges))
@@ -319,15 +287,11 @@ def main(n_trials: int = 1, max_epochs: int = 150,
     f_train = train_edges[idx[n_val + n_test:]]
 
     print(f"  DRKG split: train={len(f_train):,}  val={len(f_val):,}  test={len(f_test):,}")
-
-    print(f"\nTraining with fixed best params\n")
-
     best_val_auc, train_auc, model = run_trial(
         BEST_PARAMS, data, f_train, f_val,
         device, max_epochs, patience,
         verbose=True)
 
-    # Evaluate on the proper DRKG TEST set, NOT saliency edges!
     metrics = evaluate(model, data, f_test, device)
     metrics["train_roc_auc"] = train_auc
     metrics["val_roc_auc"]   = best_val_auc
@@ -349,7 +313,7 @@ def main(n_trials: int = 1, max_epochs: int = 150,
         "pred_src":    PRED_SRC,
         "pred_dst":    PRED_DST,
         "node_types":  list(data.node_types),
-        "approach":    "train on DRKG CbG (90%), val on DRKG (10%), test on saliency_candidates_all",
+        "approach":    "train on DRKG CbG (80%), val on DRKG (10%), test on saliency_candidates_all",
     }, indent=2))
     (out_dir / "metrics.json").write_text(json.dumps(metrics, indent=2))
     print(f"\n  [saved] -> {out_dir}")

@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """
 Comprehensive evaluation of Random Forest model predictions on labeled drug-target
 interaction data. Computes standard classification metrics, generates visualizations,
@@ -39,6 +37,7 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+from __future__ import annotations
 from sklearn.metrics import (
     accuracy_score,
     average_precision_score,

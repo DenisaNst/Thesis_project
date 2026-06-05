@@ -1,40 +1,20 @@
 """
 Prepares high-confidence drug-target repositioning candidates for saliency map
-generation. Combines predictions from two independent GNN models (ESM2-based and
-DRKG-based), prioritizes consensus predictions, and maps all candidates to DRKG
-graph node indices for interpretability analysis.
+generation. Combines predictions from two independent
+Random Forest (RF) models (ESM2-based and DRKG-based), prioritizes consensus
+predictions, and maps all candidates to DRKG graph node indices.
 
 Key workflow:
-  1. Load RF model predictions from both ESM2 and DRKG inference pipelines
-  2. Filter by confidence threshold (default: 0.9)
+  1. Load RF model predictions from both ESM2 and DRKG inference pipelines.
+  2. Filter by confidence threshold (default: 0.9).
   3. Identify cross-model agreement: pairs predicted by both models, ESM2-only,
-     and DRKG-only predictions
-  4. Load DRKG knowledge graph and map drug-target pairs to node indices
-  5. Generate saliency map candidates with node indices for graph attribution
-  6. Output four prioritized candidate sets
-
-Candidate prioritization:
-  - "both": Highest priority — both models independently predict interaction.
-    Score = average of ESM2 and DRKG scores. Best candidates for saliency maps.
-  - "esm2_only": ESM2 predictions not validated by DRKG
-  - "drkg_only": DRKG predictions not validated by ESM2
-  - "all": Combined set of all candidates above threshold
-
-Dependencies:
-  - pandas: Data manipulation and merging
-  - build_drkg: DRKG graph construction and node indexing
-  - Path resolution via PROJECT_ROOT for data access
-
-Output files:
-  - saliency_candidates_both.csv: START HERE for saliency map generation
-  - saliency_candidates_esm2only.csv
-  - saliency_candidates_drkgonly.csv
-  - saliency_candidates_all.csv
+     and DRKG-only.
+  4. Load DRKG knowledge graph and map drug-target pairs to node indices.
+  5. Generate candidate sets with node indices for downstream graph attribution.
+  6. Output prioritized candidate sets.
 
 Usage:
   python src/gnn_final/saliency_candidates.py --threshold 0.9
-  candidates = prepare_candidates(threshold=0.9)
-  # Use candidates["both"] for saliency visualization
 """
 
 from __future__ import annotations
@@ -53,7 +33,7 @@ RF_ESM2   = PROJECT_ROOT / "artifacts" / "rf_inference_esm2" / "fda_target_score
 RF_DRKG   = PROJECT_ROOT / "artifacts" / "rf_inference_drkg" / "fda_target_scores_all.csv"
 TARG_EMB  = PROJECT_ROOT / "data" / "processed" / "drkg_target_embeddings.csv"
 TARG_META = PROJECT_ROOT / "data" / "raw" / "pd_targets_metadata.csv"
-OUT_DIR   = PROJECT_ROOT / "artifacts" / "gnn_v2"
+OUT_DIR   = PROJECT_ROOT / "artifacts" / "gnn_3"
 
 
 def _map_to_drkg(df, comp_map, gene_map, chembl_to_drkg, target_names):
@@ -91,22 +71,12 @@ def prepare_candidates(threshold: float = 0.9) -> dict[str, pd.DataFrame]:
     esm2_high = esm2_all[esm2_all["score"] >= threshold].copy()
     drkg_high = drkg_all[drkg_all["score"] >= threshold].copy()
 
-    print(f"\n  ESM2: {len(esm2_high):,} pairs >= {threshold} "
-          f"({esm2_high['drug_id'].nunique():,} unique drugs)")
-    print(f"  DRKG: {len(drkg_high):,} pairs >= {threshold} "
-          f"({drkg_high['drug_id'].nunique():,} unique drugs)")
-
     esm2_pairs = set(zip(esm2_high["drug_id"], esm2_high["target_id"]))
     drkg_pairs = set(zip(drkg_high["drug_id"], drkg_high["target_id"]))
 
     both_pairs      = esm2_pairs & drkg_pairs
     esm2_only_pairs = esm2_pairs - drkg_pairs
     drkg_only_pairs = drkg_pairs - esm2_pairs
-
-    print(f"\n  Cross-model overlap:")
-    print(f"    Both models agree: {len(both_pairs):,} pairs  <- highest priority")
-    print(f"    ESM2 only:         {len(esm2_only_pairs):,} pairs")
-    print(f"    DRKG only:         {len(drkg_only_pairs):,} pairs")
 
     data, node_to_idx, idx_to_node, _, _ = build_pd_drkg_graph()
     comp_map = node_to_idx[PRED_SRC]
@@ -170,30 +140,6 @@ def prepare_candidates(threshold: float = 0.9) -> dict[str, pd.DataFrame]:
     all_cands = pd.concat(
         [cands_both, cands_esm2only, cands_drkgonly],
         ignore_index=True)
-
-
-    print(f"  DRKG-mappable candidates")
-    print(f"{'='*55}")
-    print(f"  Both models agree: {len(cands_both):,}  <- use for saliency first")
-    print(f"  ESM2 only:         {len(cands_esm2only):,}")
-    print(f"  DRKG only:         {len(cands_drkgonly):,}")
-    print(f"  Total:             {len(all_cands):,}")
-
-    if len(cands_both) > 0:
-        print(f"\n  Top 20 (both models):")
-        print(f"  {'Drug':<25} {'Target':<35} {'ESM2':>6} {'DRKG':>6} {'Avg':>6}")
-        print(f"  {'-'*25} {'-'*35} {'-'*6} {'-'*6} {'-'*6}")
-        for _, r in cands_both.head(20).iterrows():
-            print(f"  {r['drug_name']:<25} {r['target_name']:<35} "
-                  f"{r['score_esm2']:>6.4f} {r['score_drkg']:>6.4f} "
-                  f"{r['score']:>6.4f}")
-
-        print(f"\n  By target:")
-        tgt = cands_both.groupby(
-            ["target_id", "target_name"]).size().reset_index(name="n")
-        for _, r in tgt.sort_values("n", ascending=False).iterrows():
-            print(f"    {r['target_name']:<40} {r['n']:>4} candidates")
-
 
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     cands_both.to_csv(    OUT_DIR / "saliency_candidates_both.csv",     index=False)

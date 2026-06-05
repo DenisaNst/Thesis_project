@@ -109,7 +109,7 @@ def compute_drug_similarity(train_drug_ids, test_drug_ids, drug_emb):
     n_train = len(train_drug_ids)
     for i, did in enumerate(train_drug_ids):
         if i % 5000 == 0:
-            print(f"  Processing training drug {i:,}/{n_train:,}...")
+            print(f"  Processing training drug {i:,}/{n_train:,}")
 
         if did not in drug_map:
             max_sim[did] = 0.0
@@ -266,7 +266,6 @@ def plot_pareto(results_df, baseline_auc):
     ax2.set_ylabel("Test ROC-AUC", fontsize=11)
     ax2.set_title("AUC vs Training Data Reduction\nby Drug Similarity Threshold", fontsize=11)
 
-    # Place legend outside to avoid covering lines
     ax2.legend(fontsize=8, loc='center left', bbox_to_anchor=(1, 0.5))
     ax2.set_ylim(0.45, baseline_auc + 0.05)
     ax2.yaxis.grid(True, alpha=0.4)
@@ -285,11 +284,6 @@ def main():
     train_targets = train_int["target_id"].unique().tolist()
     test_targets  = test_int["target_id"].unique().tolist()
 
-    print(f"  Unique train drugs:   {len(train_drugs):,}")
-    print(f"  Unique test drugs:    {len(test_drugs):,}")
-    print(f"  Unique train targets: {len(train_targets)}")
-    print(f"  Unique test targets:  {len(test_targets)}")
-
     drug_max_sim = compute_drug_similarity(train_drugs, test_drugs, drug_emb)
     prot_max_sim = compute_protein_similarity(train_targets, test_targets, prot_emb)
 
@@ -307,7 +301,6 @@ def main():
     baseline_auc = float(roc_auc_score(y_test_full, y_prob_base))
     print(f"\n  Baseline AUC (no filtering): {baseline_auc:.4f}")
 
-    # Notice how these thresholds are much tighter now (closer to 1.0)
     drug_thresholds = [1.0, 0.95, 0.90, 0.85, 0.80, 0.75, 0.70, 0.65, 0.60]
     prot_thresholds = [1.0, 0.99, 0.98, 0.97, 0.96, 0.95, 0.94, 0.92, 0.90, 0.85]
 
@@ -337,11 +330,6 @@ def main():
     results_df.to_csv(OUT_DIR / "similarity_results_drkg_random2.csv", index=False)
 
     plot_pareto(results_df, baseline_auc)
-
-    print("\n  Top results by AUC:")
-    top = results_df.nlargest(5, "test_roc_auc")
-    for _, row in top.iterrows():
-        print(f"    drug<{row['drug_threshold']} prot<{row['prot_threshold']} -> AUC {row['test_roc_auc']:.4f}")
 
 if __name__ == "__main__":
     main()

@@ -1,7 +1,5 @@
 """
-Heterogeneous Graph Neural Network (PDHeteroGNN) Architecture.
-
-How this script works mechanically:
+How this script works:
 1. GraphSAGE Base: Defines a multi-layer GraphSAGE encoder to perform message
    passing and neighborhood aggregation across a graph.
 2. Heterogeneous Wrapper: Wraps the base encoder using PyTorch Geometric's

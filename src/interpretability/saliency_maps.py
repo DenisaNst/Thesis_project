@@ -1,24 +1,16 @@
 """
-Heterogeneous GNN Interpretability Engine for the Parkinson's Drug Repositioning Framework.
-
-This script directly addresses Research Question 4 (RQ4) from the thesis. While the 
-Random Forest classifier identifies high-confidence drug-target pairs based on 
-multimodal embeddings, it inherently lacks biological transparency. This script 
-acts as the post-hoc interpretability engine.
-
-It loads the trained Heterogeneous GraphSAGE model (PDHeteroGNN) and performs 
-input gradient analysis on the Drug Repurposing Knowledge Graph (DRKG). By measuring 
-how much each node's input embedding influences the final prediction score, it 
-identifies the "biological bridges" (Genes, Diseases, Pathways) connecting a drug 
-to a target, generating the explanatory subgraphs seen in the final report.
+This loads the trained Heterogeneous GraphSAGE model (PDHeteroGNN), utilizing 400-dimensional
+TransE embeddings, and performs input gradient analysis on the Drug Repurposing Knowledge Graph (DRKG).
+Because the candidate edges were explicitly removed from the graph prior to training to prevent data leakage,
+this script successfully forces the GNN to reveal the secondary "biological bridges" connecting a drug to a target.
 
 Key functionality:
-  - Gradient-based Saliency: Computes the derivative of the prediction score with 
-    respect to all node embeddings.
-  - Subgraph Extraction: Isolates the specific biomedical network pathways driven 
-    by the top influential nodes.
-  - Saliency Visualization: Generates the directed network diagrams (e.g., the 
-    Abemaciclib and Acetazolamide figures) mapping node size to mathematical importance.
+  - Gradient-based Saliency: Computes the derivative of the GNN prediction score with
+    respect to all 97,238 node embeddings to determine mathematical importance.
+  - Subgraph Extraction: Isolates the top-K most influential nodes and their connecting
+    edges to form an explanatory subgraph, 15 in this script.
+  - Accessible Saliency Visualization: Generates directed network diagrams and bar charts
+    mapping node size to gradient importance.
 """
 
 from __future__ import annotations
@@ -30,7 +22,6 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 import torch
-import torch.nn.functional as F
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
@@ -39,25 +30,20 @@ import networkx as nx
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
 
-from gnn_final.build_drkg3 import build_pd_drkg_graph, PRED_SRC, PRED_DST
+from gnn_final.build_drkg import build_pd_drkg_graph, PRED_SRC, PRED_DST
 from gnn_final.GNN_pd import PDHeteroGNN
 
 # Paths
-MODEL_DIR    = PROJECT_ROOT / "artifacts" / "gnn_v2"
+MODEL_DIR    = PROJECT_ROOT / "artifacts" / "gnn_3"
 CAND_CSV     = MODEL_DIR / "saliency_candidates_both.csv"
 OUT_DIR      = MODEL_DIR / "saliency_maps"
 
-
-# ---------------------------------------------------------------------------
-# Core saliency computation (unchanged)
-# ---------------------------------------------------------------------------
 
 def compute_saliency(model: PDHeteroGNN,
                      data,
                      drug_idx: int,
                      target_idx: int,
                      device: torch.device) -> dict[str, np.ndarray]:
-    """Compute input gradient saliency for a single drug-target pair."""
     model.eval()
 
     x_dict_grad = {}
@@ -72,7 +58,6 @@ def compute_saliency(model: PDHeteroGNN,
     edge_idx = torch.stack([src_idx, dst_idx])
 
     score = model.score_pairs(z_dict, edge_idx, PRED_SRC, PRED_DST)
-
     score.backward()
 
     saliency = {}
@@ -82,7 +67,6 @@ def compute_saliency(model: PDHeteroGNN,
                 .detach().cpu().numpy()
         else:
             saliency[ntype] = np.zeros(x_grad.shape[0])
-
     return saliency
 
 
@@ -90,9 +74,8 @@ def get_top_nodes(saliency: dict[str, np.ndarray],
                   idx_to_node: dict[str, dict[int, str]],
                   drug_idx: int,
                   target_idx: int,
-                  top_k: int = 10,
+                  top_k: int = 15,
                   exclude_self: bool = True) -> list[dict]:
-    """Extract the top-K most important nodes from saliency scores."""
     all_nodes = []
 
     for ntype, scores in saliency.items():
@@ -102,7 +85,6 @@ def get_top_nodes(saliency: dict[str, np.ndarray],
                     continue
                 if ntype == PRED_DST and node_idx == target_idx:
                     continue
-
             entity_name = idx_to_node.get(ntype, {}).get(
                 node_idx, f"{ntype}_node_{node_idx}")
             all_nodes.append({
@@ -116,38 +98,21 @@ def get_top_nodes(saliency: dict[str, np.ndarray],
     return all_nodes[:top_k]
 
 
-# ---------------------------------------------------------------------------
-# NEW: Subgraph extraction and visualization
-# ---------------------------------------------------------------------------
-
 def extract_subgraph_around_nodes(data,
-                                   node_to_idx: dict[str, dict[str, int]],
-                                   idx_to_node: dict[str, dict[int, str]],
-                                   drug_idx: int,
-                                   drug_name: str,
-                                   target_idx: int,
-                                   target_name: str,
-                                   top_nodes: list[dict]) -> dict:
-    """
-    Extract induced subgraph connecting the drug to target through
-    the top salient nodes.
+                                  node_to_idx: dict[str, dict[str, int]],
+                                  idx_to_node: dict[str, dict[int, str]],
+                                  drug_idx: int,
+                                  drug_name: str,
+                                  target_idx: int,
+                                  target_name: str,
+                                  top_nodes: list[dict]) -> dict:
 
-    Returns
-    -------
-    subgraph_data : dict
-        nodes : list of (node_id, node_type, entity_name, importance)
-        edges : list of (src, dst, relation_type)
-    """
-
-    # Collect nodes: query drug + target + top salient nodes
     include_node_ids = set()
     include_node_ids.add((PRED_SRC, drug_idx))
     include_node_ids.add((PRED_DST, target_idx))
 
     for n in top_nodes:
         include_node_ids.add((n["ntype"], n["node_idx"]))
-
-    # Build edge list: include all edges within this node set
     subgraph_edges = []
     node_type_map = {}
 
@@ -160,7 +125,6 @@ def extract_subgraph_around_nodes(data,
             src_node_id = (src_type, int(src_idx))
             dst_node_id = (dst_type, int(dst_idx))
 
-            # Include edge if both endpoints are in our node set
             if src_node_id in include_node_ids and dst_node_id in include_node_ids:
                 subgraph_edges.append({
                     "src": src_node_id,
@@ -169,13 +133,10 @@ def extract_subgraph_around_nodes(data,
                 })
                 node_type_map[src_node_id] = src_type
                 node_type_map[dst_node_id] = dst_type
-
-    # Build node list with importance scores
     node_importance = {}
     for n in top_nodes:
         node_importance[(n["ntype"], n["node_idx"])] = n["importance"]
 
-    # Add query nodes with high importance
     node_importance[(PRED_SRC, drug_idx)] = 1.0
     node_importance[(PRED_DST, target_idx)] = 1.0
 
@@ -205,21 +166,8 @@ def visualize_subgraph(subgraph_data: dict,
                        target_name: str,
                        rf_score: float,
                        output_path: Path) -> None:
-    """
-    Visualize the explanatory subgraph as a network diagram.
-
-    Features:
-      - Query drug and target highlighted in distinctive colors
-      - Other nodes sized/colored by importance score
-      - Edge types labeled/colored by relation type
-    """
-    if not subgraph_data["nodes"]:
-        return
-
-    # Build NetworkX graph
     G = nx.DiGraph()
 
-    # Add nodes with attributes
     node_color_map = {}
     node_size_map = {}
 
@@ -228,34 +176,43 @@ def visualize_subgraph(subgraph_data: dict,
         ntype = node_info["ntype"]
         entity = node_info["entity_name"]
         importance = node_info["importance"]
-
-        # Clean entity name for display
-        clean_name = entity
-        for prefix in ["Gene::9606::", "Compound::DrugBank::",
-                       "Compound::CHEMBL::", "Disease::MESH:",
-                       "Biological_Process::", "Molecular_Function::",
-                       "Pathway::"]:
-            clean_name = clean_name.replace(prefix, "")
-        clean_name = clean_name[:40]
-
+        if node_info["is_query_drug"]:
+            clean_name = drug_name
+        elif node_info["is_query_target"]:
+            clean_name = target_name
+        else:
+            clean_name = entity
+            for middle_tag in [
+                "::9606::", "::DrugBank::", "::CHEMBL::", "::MESH:",
+                "::GO:", "::UBERON:", "::UMLS:C", "::UMLS:",
+                "::EPC:", "::MOA:", "::PE:", "::ATC:", "::TAX:"
+            ]:
+                clean_name = clean_name.replace(middle_tag, "::")
+        if len(clean_name) > 35:
+            clean_name = clean_name[:32] + "..."
         G.add_node(node_id, label=clean_name, importance=importance)
 
-        # Color and size by node type and importance
         if node_info["is_query_drug"]:
-            node_color_map[node_id] = "#FF6B6B"  # Red for query drug
+            node_color_map[node_id] = "#FF6B6B"
             node_size_map[node_id] = 3000
         elif node_info["is_query_target"]:
-            node_color_map[node_id] = "#4ECDC4"  # Teal for query target
+            node_color_map[node_id] = "#4ECDC4"
             node_size_map[node_id] = 3000
         else:
-            # Intermediate nodes: color by type, size by importance
             type_colors = {
-                "Compound":           "#4C72B0",
-                "Gene":               "#DD8452",
-                "Disease":            "#55A868",
-                "Biological_Process": "#C44E52",
-                "Molecular_Function": "#8172B2",
-                "Pathway":            "#937860",
+                "Compound": "#0072B2",
+                "Biological_Process": "#D55E00",
+                "Gene": "#E69F00",
+                "Disease": "#009E73",
+                "Pathway": "#56B4E9",
+                "Molecular_Function": "#CC79A7",
+                "Cellular_Component": "#F0E442",
+                "Anatomy": "#7F7F7F",
+                "Symptom": "#8C564B",
+                "Side_Effect": "#17BECF",
+                "Pharmacologic_Class": "#001C7F",
+                "Atc": "#CAB2D6",
+                "Tax": "#B2DF8A",
             }
             node_color_map[node_id] = type_colors.get(ntype, "#777777")
             node_size_map[node_id] = 500 + importance * 2000
@@ -269,7 +226,6 @@ def visualize_subgraph(subgraph_data: dict,
 
         G.add_edge(src, dst, relation=rel)
         if rel not in edge_type_colors:
-            # Assign colors to different relation types
             colors = ["#2E86AB", "#A23B72", "#F18F01", "#C73E1D", "#6A994E"]
             edge_type_colors[rel] = colors[len(edge_type_colors) % len(colors)]
 
@@ -278,8 +234,6 @@ def visualize_subgraph(subgraph_data: dict,
 
     # Create figure
     fig, ax = plt.subplots(figsize=(14, 10))
-
-    # Draw edges with colors by type — FIXED UNPACKING HERE
     for src, dst, rel_data in G.edges(data=True):
         rel = rel_data.get("relation", "unknown")
         color = edge_type_colors.get(rel, "#CCCCCC")
@@ -295,8 +249,6 @@ def visualize_subgraph(subgraph_data: dict,
             arrows=True,
             connectionstyle="arc3,rad=0.1",
         )
-
-    # Draw nodes
     nodes = list(G.nodes())
     colors = [node_color_map.get(n, "#777777") for n in nodes]
     sizes = [node_size_map.get(n, 500) for n in nodes]
@@ -310,7 +262,6 @@ def visualize_subgraph(subgraph_data: dict,
         alpha=0.9,
     )
 
-    # Draw labels
     labels = {n: G.nodes[n]["label"] for n in nodes}
     nx.draw_networkx_labels(
         G, pos,
@@ -320,23 +271,28 @@ def visualize_subgraph(subgraph_data: dict,
         ax=ax,
     )
 
-    # Title and legend
     ax.set_title(
         f"Explanatory Subgraph: {drug_name} → {target_name}\nRF Score: {rf_score:.4f}",
         fontsize=14, fontweight="bold", pad=20
     )
 
-    # Legend for node types
     from matplotlib.patches import Patch
     legend_elements = [
         Patch(facecolor="#FF6B6B", label="Query Drug"),
         Patch(facecolor="#4ECDC4", label="Query Target"),
-        Patch(facecolor="#DD8452", label="Gene"),
-        Patch(facecolor="#55A868", label="Disease"),
-        Patch(facecolor="#4C72B0", label="Compound"),
-        Patch(facecolor="#C44E52", label="Biological Process"),
-        Patch(facecolor="#8172B2", label="Molecular Function"),
-        Patch(facecolor="#937860", label="Pathway"),
+        Patch(facecolor="#0072B2", label="Compound"),
+        Patch(facecolor="#D55E00", label="Biological Process"),
+        Patch(facecolor="#E69F00", label="Gene"),
+        Patch(facecolor="#009E73", label="Disease"),
+        Patch(facecolor="#56B4E9", label="Pathway"),
+        Patch(facecolor="#CC79A7", label="Molecular Function"),
+        Patch(facecolor="#F0E442", label="Cellular Component"),
+        Patch(facecolor="#7F7F7F", label="Anatomy"),
+        Patch(facecolor="#8C564B", label="Symptom"),
+        Patch(facecolor="#17BECF", label="Side Effect"),
+        Patch(facecolor="#001C7F", label="Pharm. Class"),
+        Patch(facecolor="#CAB2D6", label="ATC"),
+        Patch(facecolor="#B2DF8A", label="Taxonomy"),
     ]
     ax.legend(handles=legend_elements, loc="upper left", fontsize=9)
 
@@ -346,19 +302,11 @@ def visualize_subgraph(subgraph_data: dict,
     plt.close()
 
 
-# ---------------------------------------------------------------------------
-# Original bar chart visualization (kept for reference)
-# ---------------------------------------------------------------------------
-
 def plot_saliency_bars(top_nodes: list[dict],
                        drug_name: str,
                        target_name: str,
                        rf_score: float,
                        output_path: Path) -> None:
-    """Bar chart of top-K influential DRKG nodes for one drug-target pair."""
-    if not top_nodes:
-        return
-
     labels = []
     for n in top_nodes:
         name = n["entity_name"]
@@ -369,19 +317,24 @@ def plot_saliency_bars(top_nodes: list[dict],
             name = name.replace(prefix, "")
         label = f"[{n['ntype'][:3].upper()}] {name[:40]}"
         labels.append(label)
-
     values = [n["importance"] for n in top_nodes]
 
     color_map = {
-        "Compound":           "#4C72B0",
-        "Gene":               "#DD8452",
-        "Disease":            "#55A868",
-        "Biological_Process": "#C44E52",
-        "Molecular_Function": "#8172B2",
-        "Pathway":            "#937860",
+        "Compound": "#0072B2",
+        "Biological_Process": "#D55E00",
+        "Gene": "#E69F00",
+        "Disease": "#009E73",
+        "Pathway": "#56B4E9",
+        "Molecular_Function": "#CC79A7",
+        "Cellular_Component": "#F0E442",
+        "Anatomy": "#7F7F7F",
+        "Symptom": "#8C564B",
+        "Side_Effect": "#17BECF",
+        "Pharmacologic_Class": "#001C7F",
+        "Atc": "#CAB2D6",
+        "Tax": "#B2DF8A",
     }
     colors = [color_map.get(n["ntype"], "#777777") for n in top_nodes]
-
     fig, ax = plt.subplots(figsize=(10, max(4, len(labels) * 0.45)))
     bars = ax.barh(labels[::-1], values[::-1], color=colors[::-1])
     ax.set_xlabel("Mean |Gradient| (importance)", fontsize=11)
@@ -395,46 +348,21 @@ def plot_saliency_bars(top_nodes: list[dict],
     plt.close()
 
 
-# ---------------------------------------------------------------------------
-# Main pipeline
-# ---------------------------------------------------------------------------
-
 def run_saliency_analysis(top_candidates: int = 20,
                           top_k_nodes: int = 15,
                           out_dir: Path = OUT_DIR) -> pd.DataFrame:
-    """Run saliency analysis for the top RF-identified drug repositioning candidates."""
-
     out_dir.mkdir(parents=True, exist_ok=True)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    print(f"Device: {device}")
-
-    # Load RF candidates
-    if not CAND_CSV.exists():
-        raise FileNotFoundError(
-            f"Candidates file not found: {CAND_CSV}\n"
-            f"Run prepare_saliency_candidates.py first.")
 
     candidates = pd.read_csv(CAND_CSV)
     candidates = candidates.sort_values(
         "score", ascending=False).head(top_candidates)
-    print(f"\n  RF candidates to explain: {len(candidates)}")
-    print(f"  Score range: "
-          f"{candidates['score'].min():.4f} – "
-          f"{candidates['score'].max():.4f}")
 
-    # Load DRKG graph
-    print("\n  Loading DRKG graph ...")
     data, node_to_idx, idx_to_node, _, _ = build_pd_drkg_graph()
     data = data.to(device)
 
-    # Load trained GNN model
     model_path    = MODEL_DIR / "gnn_model.pt"
     metadata_path = MODEL_DIR / "gnn_metadata.json"
-
-    if not model_path.exists():
-        raise FileNotFoundError(
-            f"Model not found: {model_path}\n"
-            f"Train the GNN first with train_gnn_v2.py")
 
     with open(metadata_path) as f:
         metadata = json.load(f)
@@ -448,16 +376,14 @@ def run_saliency_analysis(top_candidates: int = 20,
         dropout=params["dropout"],
     ).to(device)
 
-    model.load_state_dict(
-        torch.load(model_path, map_location=device))
-    model.eval()
-    print(f"  Model loaded from {model_path}")
-    print(f"  Params: hidden={params['hidden_channels']} "
-          f"out={params['out_channels']} "
-          f"layers={params['num_layers']}")
+    with torch.no_grad():
+        model.encode(data.x_dict, data.edge_index_dict)
 
-    # Compute saliency for each candidate
-    print(f"\n  Computing saliency for {len(candidates)} candidates ...")
+    model.load_state_dict(
+        torch.load(model_path, map_location=device, weights_only=True))
+    model.eval()
+
+    print(f"\n  Computing saliency for {len(candidates)} candidates")
     results = []
 
     for i, row in candidates.iterrows():
@@ -472,24 +398,15 @@ def run_saliency_analysis(top_candidates: int = 20,
               f"(RF score: {rf_score:.4f})")
 
         try:
-            # Compute saliency
             saliency = compute_saliency(
                 model, data, drug_idx, target_idx, device)
 
-            # Get top-K influential nodes
             top_nodes = get_top_nodes(
                 saliency, idx_to_node,
                 drug_idx, target_idx,
                 top_k=top_k_nodes,
                 exclude_self=True)
 
-            print(f"    Top influential nodes:")
-            for j, n in enumerate(top_nodes[:5]):
-                print(f"      {j+1}. [{n['ntype'][:4]}] "
-                      f"{n['entity_name'][:60]} "
-                      f"  importance={n['importance']:.6f}")
-
-            # Extract and visualize subgraph
             subgraph = extract_subgraph_around_nodes(
                 data, node_to_idx, idx_to_node,
                 drug_idx, drug_name,
@@ -511,7 +428,6 @@ def run_saliency_analysis(top_candidates: int = 20,
                 top_nodes, drug_name, target_name,
                 rf_score, bar_path)
 
-            # Save top nodes to results
             for rank, n in enumerate(top_nodes):
                 results.append({
                     "drug_name":    drug_name,
@@ -524,28 +440,23 @@ def run_saliency_analysis(top_candidates: int = 20,
                     "entity_name":  n["entity_name"],
                     "importance":   n["importance"],
                 })
-
         except Exception as e:
             print(f"    [ERROR] {drug_name} → {target_name}: {e}")
             import traceback
             traceback.print_exc()
             continue
 
-    # Save results
     results_df = pd.DataFrame(results)
     out_csv    = out_dir / "saliency_results.csv"
     results_df.to_csv(out_csv, index=False)
 
-    print(f"\n{'='*55}")
     print(f"  Saliency analysis complete")
     print(f"  Candidates explained: "
           f"{results_df['drug_name'].nunique()}")
     print(f"  Results saved to: {out_csv}")
     print(f"  Subgraph visualization: {out_dir}/subgraph_*.png")
     print(f"  Importance bar charts:  {out_dir}/importance_*.png")
-    print(f"{'='*55}")
 
-    # Summary: most commonly influential node types
     if len(results_df) > 0:
         print(f"\n  Most commonly influential node types:")
         type_counts = results_df[results_df["rank"] <= 5]\
@@ -564,10 +475,6 @@ def run_saliency_analysis(top_candidates: int = 20,
 
     return results_df
 
-
-# ---------------------------------------------------------------------------
-# CLI
-# ---------------------------------------------------------------------------
 
 def _parse_args():
     p = argparse.ArgumentParser()

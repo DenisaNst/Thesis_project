@@ -177,7 +177,6 @@ def run_experiment(
     drug_max_sim, prot_max_sim,
     drug_threshold, prot_threshold,
 ):
-    # Filter training pairs
     filtered_train = train_int[
         (train_int["drug_id"].map(drug_max_sim).fillna(0) < drug_threshold) &
         (train_int["target_id"].map(prot_max_sim).fillna(0) < prot_threshold)
@@ -185,10 +184,6 @@ def run_experiment(
 
     original_n = len(train_int)
     filtered_n = len(filtered_train)
-
-    # Safety check in case it deletes literally everything
-    if original_n == 0:
-        return None
     reduction = 1 - filtered_n / original_n
 
     _, X_train, y_train, _ = prepare_feature_matrix(
@@ -270,7 +265,6 @@ def plot_pareto(results_df, baseline_auc):
     ax2 = axes[1]
     ax2.set_facecolor("#F8FAFC")
 
-    # Group by drug threshold for cleaner lines
     for d_thresh in sorted(df["drug_threshold"].unique()):
         subset = df[df["drug_threshold"] == d_thresh].sort_values("prot_threshold")
         if len(subset) > 1:
@@ -292,7 +286,6 @@ def plot_pareto(results_df, baseline_auc):
     ax2.set_title("AUC vs Training Data Reduction\nby Drug Similarity Threshold",
                   fontsize=11)
 
-    # Legend pushed entirely outside the graph to prevent overlap
     ax2.legend(fontsize=8, loc='center left', bbox_to_anchor=(1, 0.5))
     ax2.set_ylim(0.45, baseline_auc + 0.05)
     ax2.yaxis.grid(True, alpha=0.4)
@@ -306,18 +299,12 @@ def plot_pareto(results_df, baseline_auc):
 
 def main():
     print("  Similarity-Based Partitioning with DRKG TransE ")
-
     train_int, test_int, drug_emb, prot_emb = load_data()
 
     train_drugs   = train_int["drug_id"].unique().tolist()
     test_drugs    = test_int["drug_id"].unique().tolist()
     train_targets = train_int["target_id"].unique().tolist()
     test_targets  = test_int["target_id"].unique().tolist()
-
-    print(f"  Unique train drugs:   {len(train_drugs):,}")
-    print(f"  Unique test drugs:    {len(test_drugs):,}")
-    print(f"  Unique train targets: {len(train_targets)}")
-    print(f"  Unique test targets:  {len(test_targets)}")
 
     drug_max_sim = compute_drug_similarity(train_drugs, test_drugs, drug_emb)
     prot_max_sim = compute_protein_similarity(
