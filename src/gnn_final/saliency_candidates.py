@@ -29,8 +29,8 @@ sys.path.insert(0, str(PROJECT_ROOT / "src"))
 
 from build_drkg import build_pd_drkg_graph, PRED_SRC, PRED_DST
 
-RF_ESM2   = PROJECT_ROOT / "artifacts" / "rf_inference_esm2" / "fda_target_scores_all.csv"
-RF_DRKG   = PROJECT_ROOT / "artifacts" / "rf_inference_drkg" / "fda_target_scores_all.csv"
+RF_ESM2   = PROJECT_ROOT / "artifacts" / "rf_inference_esm2" / "fda_target_scores_all_esm2.csv"
+RF_DRKG   = PROJECT_ROOT / "artifacts" / "rf_inference_drkg" / "fda_target_scores_all_esm2.csv"
 TARG_EMB  = PROJECT_ROOT / "data" / "processed" / "drkg_target_embeddings.csv"
 TARG_META = PROJECT_ROOT / "data" / "raw" / "pd_targets_metadata.csv"
 OUT_DIR   = PROJECT_ROOT / "artifacts" / "gnn_3"

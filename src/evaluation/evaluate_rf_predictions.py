@@ -6,28 +6,21 @@ and performs top-k enrichment analysis to assess model quality and ranking abili
 Key functionality:
   - Load trained RF model and merge interaction labels with drug and protein embeddings
   - Generate probabilistic predictions for drug-target pairs
-  - Compute classification metrics: accuracy, F1, ROC-AUC, PR-AUC
+  - Compute classification metrics: accuracy, F1, ROC-AUC, PR-AUC, Brier, Log Loss
   - Visualize score distributions: known positives vs negatives (histogram)
   - Plot ROC and Precision-Recall curves with AUC scores
   - Compute top-k enrichment: precision, recall, enrichment factor at k={10,25,50,...,1000}
   - Normalize column names across different data sources (ChEMBL vs DrugBank IDs)
 
 Output:
-  - CSV: evaluation_scores.csv with per-pair predictions and probabilities
-  - CSV: topk_enrichment.csv with precision/recall/enrichment at each k
-  - PNG: score_histograms.png showing separation of positives vs negatives
-  - PNG: roc_pr_curves.png showing ROC and Precision-Recall performance
+  - CSV: evaluation_scores_esm2_time.csv with per-pair predictions and probabilities
+  - CSV: topk_enrichment_similarity_esm2.csv with precision/recall/enrichment at each k
+  - PNG: score_histograms_esm2_time.png showing separation of positives vs negatives
+  - PNG: roc_pr_curves_similarity_esm2.png showing ROC and Precision-Recall performance
+  - PNG: calibration_curve_similarity_esm2.png showing model reliability
   - JSON: metrics.json with summary statistics (AUC, F1, positive rate, etc.)
-
-Dependencies:
-  - scikit-learn: RF model loading, metrics computation
-  - pandas, numpy: Data manipulation
-  - matplotlib: Visualization
-
-Note:
-  Column normalization handles different naming conventions (molecule_chembl_id → drug_id,
-  target_chembl_id → target_id) to ensure compatibility across data sources.
 """
+from __future__ import annotations
 
 import argparse
 import json
@@ -37,11 +30,13 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from __future__ import annotations
+from sklearn.calibration import calibration_curve
 from sklearn.metrics import (
     accuracy_score,
     average_precision_score,
+    brier_score_loss,
     f1_score,
+    log_loss,
     precision_recall_curve,
     roc_auc_score,
     roc_curve,
@@ -51,10 +46,13 @@ from sklearn.metrics import (
 def normalize_id_columns(df: pd.DataFrame) -> pd.DataFrame:
     out = df.copy()
     rename_map = {}
+
     if "molecule_chembl_id" in out.columns and "drug_id" not in out.columns:
         rename_map["molecule_chembl_id"] = "drug_id"
+
     if "target_chembl_id" in out.columns and "target_id" not in out.columns:
         rename_map["target_chembl_id"] = "target_id"
+
     if rename_map:
         out = out.rename(columns=rename_map)
     return out
@@ -65,25 +63,29 @@ def load_model(model_path: Path):
         return pickle.load(f)
 
 
-def prepare_matrix(
-        interactions_df: pd.DataFrame,
-        drug_embeddings_df: pd.DataFrame,
-        protein_embeddings_df: pd.DataFrame,
-) -> tuple[pd.DataFrame, np.ndarray, np.ndarray, list[str]]:
+def prepare_matrix(interactions_df, drug_embeddings_df, protein_embeddings_df):
     interactions_df = normalize_id_columns(interactions_df)
     drug_embeddings_df = normalize_id_columns(drug_embeddings_df)
     protein_embeddings_df = normalize_id_columns(protein_embeddings_df)
 
-    merged = interactions_df.merge(drug_embeddings_df, on="drug_id", how="inner")
-    merged = merged.merge(protein_embeddings_df, on="target_id", how="inner")
+    drug_emb_cols = [c for c in drug_embeddings_df.columns if c.startswith("drug_emb_")]
+    prot_emb_cols = [c for c in protein_embeddings_df.columns if c.startswith("target_emb_")]
 
-    feature_cols = [
-        c for c in merged.columns
-        if c.startswith("drug_emb_") or c.startswith("target_emb_")
-    ]
+    overlap_cols = [c for c in interactions_df.columns if c.startswith("drug_emb_") or c.startswith("target_emb_")]
+    if overlap_cols:
+        interactions_df = interactions_df.drop(columns=overlap_cols)
+
+    d_clean = drug_embeddings_df[["drug_id"] + drug_emb_cols]
+    p_clean = protein_embeddings_df[["target_id"] + prot_emb_cols]
+
+    merged = interactions_df.merge(d_clean, on="drug_id", how="inner")
+    merged = merged.merge(p_clean, on="target_id", how="inner")
+
+    feature_cols = drug_emb_cols + prot_emb_cols
 
     X = merged[feature_cols].to_numpy(dtype=np.float32)
     y = merged["label"].to_numpy(dtype=int)
+
     return merged, X, y, feature_cols
 
 
@@ -91,8 +93,6 @@ def get_positive_class_probabilities(clf, X: np.ndarray) -> np.ndarray:
     classes = list(clf.classes_)
     if 1 in classes:
         pos_idx = classes.index(1)
-    else:
-        raise ValueError(f"Positive class 1 not found in model classes: {classes}")
     return clf.predict_proba(X)[:, pos_idx]
 
 
@@ -103,7 +103,7 @@ def compute_topk_enrichment(
         ks: list[int] | None = None,
 ) -> pd.DataFrame:
     if ks is None:
-        ks = [10, 25, 50, 100, 250, 500, 1000]
+        ks = [5, 10, 15, 25, 50, 100, 250, 500, 1000]
 
     total_n = len(df)
     total_pos = int(df[label_col].sum())
@@ -181,6 +181,27 @@ def plot_roc_pr_curves(df: pd.DataFrame, out_path: Path) -> dict:
     return {"roc_auc": float(roc_auc), "pr_auc": float(pr_auc)}
 
 
+def plot_calibration_curve_chart(y_true: np.ndarray, y_prob: np.ndarray, output_path: Path):
+    """Plot the calibration curve (reliability diagram) for the model."""
+    prob_true, prob_pred = calibration_curve(y_true, y_prob, n_bins=10, strategy='uniform')
+
+    fig, ax = plt.subplots(figsize=(8, 8))
+
+    ax.plot([0, 1], [0, 1], "k:", label="Perfectly calibrated")
+    ax.plot(prob_pred, prob_true, "s-", label="Random Forest", color="#0072B2", linewidth=2, markersize=8)
+
+    ax.set_xlabel("Mean Predicted Probability", fontsize=12)
+    ax.set_ylabel("True Fraction of Positives", fontsize=12)
+    ax.set_title("Calibration Curve (Reliability Diagram)", fontsize=14, fontweight="bold")
+    ax.legend(loc="lower right")
+    ax.grid(True, alpha=0.3)
+    ax.spines[["top", "right"]].set_visible(False)
+
+    plt.tight_layout()
+    plt.savefig(output_path, dpi=150, bbox_inches="tight")
+    plt.close()
+
+
 def main() -> None:
     project_root = Path(__file__).resolve().parents[2]
 
@@ -198,19 +219,19 @@ def main() -> None:
         default=project_root / "data" / "processed" / "chembl_drug_embeddings.csv",
     )
     parser.add_argument(
-        "--protein_embeddings_csv",
+        "--drkg_target_embeddings_csv",
         type=Path,
-        default=project_root / "data" / "processed" / "protein_embeddings.csv",
+        default=project_root / "data" / "processed" / "drkg_target_embeddings.csv",
     )
     parser.add_argument(
         "--model_path",
         type=Path,
-        default=project_root / "artifacts" / "rf_cv" / "rf_model.pkl",
+        default=project_root / "artifacts" / "rf_timeslice_esm2" / "rf_model.pkl",
     )
     parser.add_argument(
         "--metadata_path",
         type=Path,
-        default=project_root / "artifacts" / "rf_cv" / "rf_metadata.json",
+        default=project_root / "artifacts" / "rf_timeslice_esm2" / "rf_metadata.json",
         help="Path to metadata.json saved during training (contains feature_cols).",
     )
     parser.add_argument(
@@ -227,25 +248,19 @@ def main() -> None:
     args = parser.parse_args()
     args.out_dir.mkdir(parents=True, exist_ok=True)
 
-    print("Loading model and metadata")
+    print("Loading model and metadata...")
     clf = load_model(args.model_path)
 
     if args.metadata_path.exists():
         metadata = json.loads(args.metadata_path.read_text(encoding="utf-8"))
-        feature_cols_from_metadata = metadata.get("feature_cols", None)
         print(f"  Metadata loaded from: {args.metadata_path}")
 
-    print(" Loading data")
     interactions = pd.read_csv(args.interactions_csv)
-    interactions = normalize_id_columns(interactions)
-
     drug_emb = pd.read_csv(args.drug_embeddings_csv)
-    protein_emb = pd.read_csv(args.protein_embeddings_csv)
+    protein_emb = pd.read_csv(args.drkg_target_embeddings_csv)
 
-    print(" Building feature matrix")
     merged, X, y, feature_cols_from_data = prepare_matrix(interactions, drug_emb, protein_emb)
 
-    print("Scoring predictions")
     probs = get_positive_class_probabilities(clf, X)
     preds = (probs >= 0.5).astype(int)
 
@@ -257,7 +272,7 @@ def main() -> None:
     eval_df["probability"] = probs
     eval_df["predicted_label"] = preds
 
-    eval_path = args.out_dir / "evaluation_scores.csv"
+    eval_path = args.out_dir / "evaluation_scores_esm2_time.csv"
     eval_df.to_csv(eval_path, index=False)
 
     metrics = {
@@ -265,32 +280,27 @@ def main() -> None:
         "f1": float(f1_score(y, preds, zero_division=0)),
         "roc_auc": float(roc_auc_score(y, probs)) if len(np.unique(y)) > 1 else float("nan"),
         "pr_auc": float(average_precision_score(y, probs)) if len(np.unique(y)) > 1 else float("nan"),
+        "brier_score": float(brier_score_loss(y, probs)),
+        "log_loss": float(log_loss(y, probs)),
         "positive_rate": float(y.mean()),
         "n_rows": int(len(y)),
     }
 
-    hist_path = args.out_dir / "score_histograms.png"
-    rocpr_path = args.out_dir / "roc_pr_curves.png"
+    hist_path = args.out_dir / "score_histograms_esm2_time.png"
+    rocpr_path = args.out_dir / "roc_pr_curves_similarity_esm2.png"
     plot_score_histograms(eval_df, hist_path)
     curve_metrics = plot_roc_pr_curves(eval_df, rocpr_path)
     metrics.update(curve_metrics)
 
-    topk_df = compute_topk_enrichment(eval_df, ks=[10, 25, 50, 100, 250, 500, 1000])
-    topk_path = args.out_dir / "topk_enrichment.csv"
+    calib_path = args.out_dir / "calibration_curve_similarity_esm2.png"
+    plot_calibration_curve_chart(y, probs, calib_path)
+
+    topk_df = compute_topk_enrichment(eval_df, ks=[5, 10, 15, 25, 50, 100, 250, 500, 1000])
+    topk_path = args.out_dir / "topk_enrichment_similarity_esm2.csv"
     topk_df.to_csv(topk_path, index=False)
 
     metrics_path = args.out_dir / "metrics.json"
     metrics_path.write_text(json.dumps(metrics, indent=2), encoding="utf-8")
-
-    print("\nSummary")
-    for k, v in metrics.items():
-        print(f"{k}: {v}")
-    print(f"\nSaved:")
-    print(f"  {eval_path}")
-    print(f"  {hist_path}")
-    print(f"  {rocpr_path}")
-    print(f"  {topk_path}")
-    print(f"  {metrics_path}")
 
 
 if __name__ == "__main__":

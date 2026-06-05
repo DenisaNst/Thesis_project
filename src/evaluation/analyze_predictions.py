@@ -245,7 +245,7 @@ def analyse_novel_candidates(
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--scores_csv",           type=Path,  default=Path("artifacts/rf_cv/fda_target_scores_all.csv"))
+    parser.add_argument("--scores_csv",           type=Path,  default=Path("artifacts/rf_cv/fda_target_scores_all_esm2.csv"))
     parser.add_argument("--targets_metadata",     type=Path,  default=Path("data/raw/pd_targets_metadata.csv"))
     parser.add_argument("--pd_indications_csv",   type=Path,  default=Path("data/raw/pd_indications.csv"))
     parser.add_argument("--out_dir",              type=Path,  default=Path("artifacts/rf_cv/prediction_analysis_all"))

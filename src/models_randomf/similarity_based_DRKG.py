@@ -35,42 +35,14 @@ OUT_DIR.mkdir(parents=True, exist_ok=True)
 FIG_DIR.mkdir(parents=True, exist_ok=True)
 
 # Initialize with time-slice
-# def load_data():
-#     interactions = eval_protocol.load_and_standardize_interactions(
-#         str(PROJECT_ROOT / "data/raw/chembl_pd_interactions.csv")
-#     )
-#
-#     CUTOFF = 2018
-#     train_int = interactions[interactions["year"] <= CUTOFF].copy()
-#     test_int = interactions[interactions["year"] > CUTOFF].copy()
-#
-#     drug_emb = pd.read_csv(
-#         PROJECT_ROOT / "data/processed/chembl_drug_embeddings.csv"
-#     ).rename(columns={"molecule_chembl_id": "drug_id"})
-#
-#     prot_emb = pd.read_csv(
-#         PROJECT_ROOT / "data/processed/drkg_target_embeddings.csv"
-#     )
-#
-#     return train_int, test_int, drug_emb, prot_emb
-
-# If you want random split
 def load_data():
     interactions = eval_protocol.load_and_standardize_interactions(
         str(PROJECT_ROOT / "data/raw/chembl_pd_interactions.csv")
     )
-    from sklearn.model_selection import train_test_split
 
-    idx = np.arange(len(interactions))
-    train_idx, test_idx = train_test_split(
-        idx, test_size=0.2, random_state=42,
-        stratify=interactions["label"].values
-    )
-
-    train_int = interactions.iloc[train_idx].copy().reset_index(drop=True)
-    test_int = interactions.iloc[test_idx].copy().reset_index(drop=True)
-
-    print(f"  Train: {len(train_int):,} pairs | Test: {len(test_int):,} pairs")
+    CUTOFF = 2018
+    train_int = interactions[interactions["year"] <= CUTOFF].copy()
+    test_int = interactions[interactions["year"] > CUTOFF].copy()
 
     drug_emb = pd.read_csv(
         PROJECT_ROOT / "data/processed/chembl_drug_embeddings.csv"
@@ -81,6 +53,34 @@ def load_data():
     )
 
     return train_int, test_int, drug_emb, prot_emb
+
+# If you want random split
+# def load_data():
+#     interactions = eval_protocol.load_and_standardize_interactions(
+#         str(PROJECT_ROOT / "data/raw/chembl_pd_interactions.csv")
+#     )
+#     from sklearn.model_selection import train_test_split
+#
+#     idx = np.arange(len(interactions))
+#     train_idx, test_idx = train_test_split(
+#         idx, test_size=0.2, random_state=42,
+#         stratify=interactions["label"].values
+#     )
+#
+#     train_int = interactions.iloc[train_idx].copy().reset_index(drop=True)
+#     test_int = interactions.iloc[test_idx].copy().reset_index(drop=True)
+#
+#     print(f"  Train: {len(train_int):,} pairs | Test: {len(test_int):,} pairs")
+#
+#     drug_emb = pd.read_csv(
+#         PROJECT_ROOT / "data/processed/chembl_drug_embeddings.csv"
+#     ).rename(columns={"molecule_chembl_id": "drug_id"})
+#
+#     prot_emb = pd.read_csv(
+#         PROJECT_ROOT / "data/processed/drkg_target_embeddings.csv"
+#     )
+#
+#     return train_int, test_int, drug_emb, prot_emb
 
 
 def compute_drug_similarity(train_drug_ids, test_drug_ids, drug_emb):

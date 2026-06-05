@@ -113,11 +113,6 @@ def train_and_evaluate(
           f"target: {sum(1 for c in feature_cols if c.startswith('target_emb_'))} dims)")
     print(f"  Label counts after merge:\n{pd.Series(y).value_counts().to_string()}")
 
-    if len(merged) == 0:
-        raise ValueError(
-            "Merge produced zero rows. drug_id or target_id values do not "
-            "match between interactions and embeddings."
-        )
     if len(np.unique(y)) < 2:
         raise ValueError(
             "Only one class present after merging. Cannot train a classifier."
